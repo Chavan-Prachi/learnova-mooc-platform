@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
+  <!-- Exact Purple Background -->
+  <circle cx="18" cy="18" r="18" fill="#461EA4"/>
+  
+  <!-- Exact Lucide React GraduationCap Icon -->
+  <g transform="translate(6, 6)" fill="none" stroke="#F6F7F9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+    <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+  </g>
+</svg>
