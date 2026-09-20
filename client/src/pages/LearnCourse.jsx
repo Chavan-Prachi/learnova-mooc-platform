@@ -40,45 +40,48 @@ export default function LearnCourse() {
     setOpenDays(prev => ({ ...prev, [module]: !prev[module] }));
   };
 
-  // Convert Google Drive link to Google Docs Viewer URL (more reliable)
+  // ✅ 1. YouTube Video URL Parser
   const getVideoEmbedUrl = (url) => {
     if (!url) return "";
-
-    // Check if it's a YouTube URL
-    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
-      console.error("Not a YouTube URL:", url);
-      return "";
-    }
-
     try {
       // Handle playlist URLs
       if (url.includes('list=')) {
         const playlistId = url.split('list=')[1].split('&')[0];
         return `https://www.youtube.com/embed/videoseries?list=${playlistId}`;
       }
-
       // Handle watch URLs: youtube.com/watch?v=VIDEO_ID
       const watchMatch = url.match(/[?&]v=([^&#]+)/);
       if (watchMatch && watchMatch[1]) {
         return `https://www.youtube.com/embed/${watchMatch[1]}?rel=0`;
       }
-
-      // Handle short URLs: youtu.be/VIDEO_ID
+      // Handle short URLs: youtu.be/VIDEO_ID (Your link will match this!)
       const shortMatch = url.match(/youtu\.be\/([^?&#/]+)/);
       if (shortMatch && shortMatch[1]) {
         return `https://www.youtube.com/embed/${shortMatch[1]}?rel=0`;
       }
-
       // Handle embed URLs (already in correct format)
       if (url.includes('youtube.com/embed/')) {
         return url;
       }
-
       return url;
     } catch (error) {
       console.error("Error parsing YouTube URL:", error);
       return "";
     }
+  };
+
+  // ✅ 2. Google Drive Document URL Parser
+  const getViewerUrl = (url) => {
+    if (!url) return null;
+    const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (fileIdMatch && fileIdMatch[1]) {
+      const fileId = fileIdMatch[1];
+      return `https://docs.google.com/viewer?url=https://drive.google.com/uc?id=${fileId}&embedded=true`;
+    }
+    if (url.includes('drive.google.com')) {
+      return url.replace('/view', '/preview').replace('?usp=drive_link', '').replace('?usp=sharing', '');
+    }
+    return url;
   };
 
   const getLessonIcon = (type) => {
@@ -104,10 +107,10 @@ export default function LearnCourse() {
 
   const isGoogleDrive = selectedLesson.fileUrl?.includes('drive.google.com');
   const viewerUrl = isGoogleDrive ? getViewerUrl(selectedLesson.fileUrl) : selectedLesson.fileUrl;
+  const videoEmbedUrl = selectedLesson.type === 'video' ? getVideoEmbedUrl(selectedLesson.videoUrl) : "";
 
   return (
     <div className="fixed inset-0 top-16 flex flex-col bg-[#F6F7F9] overflow-hidden">
-
       {/* Top Header */}
       <header className="h-14 shrink-0 bg-[#1D1F23] text-white flex items-center justify-between px-4 md:px-6 shadow-md z-50">
         <div className="flex items-center gap-3 min-w-0">
@@ -171,7 +174,6 @@ export default function LearnCourse() {
         <main className="flex-1 overflow-y-auto bg-[#F6F7F9] p-4 md:p-8">
           {selectedLesson ? (
             <div className="max-w-5xl mx-auto pb-10">
-
               <div className="mb-6 flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-2xl md:text-3xl font-bold text-[#1D1F23] mb-2">{selectedLesson.title}</h2>
@@ -182,14 +184,8 @@ export default function LearnCourse() {
                     <span className="text-sm text-[#9CA3AF]">{selectedLesson.module || "Day 1"}</span>
                   </div>
                 </div>
-                {/* Always show Open button for file-based lessons */}
                 {(selectedLesson.type === 'ebook' || selectedLesson.type === 'notes' || selectedLesson.type === 'ppt') && selectedLesson.fileUrl && (
-                  <a
-                    href={selectedLesson.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#DFE1E4] text-[#461EA4] font-semibold rounded-lg hover:bg-gray-50 transition-colors shrink-0"
-                  >
+                  <a href={selectedLesson.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#DFE1E4] text-[#461EA4] font-semibold rounded-lg hover:bg-gray-50 transition-colors shrink-0">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15,3 21,3 21,9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
                     <span className="hidden md:inline">Open</span>
                   </a>
@@ -197,47 +193,30 @@ export default function LearnCourse() {
               </div>
 
               <div className="bg-white rounded-xl border border-[#DFE1E4] shadow-sm overflow-hidden">
-
-                {/* VIDEO */}
-                {selectedLesson.type === 'video' && selectedLesson.videoUrl ? (
-                  <div className="aspect-video bg-black w-full relative">
+                
+                {/* ✅ VIDEO PLAYER */}
+                {selectedLesson.type === 'video' && videoEmbedUrl ? (
+                  <div className="aspect-video bg-black w-full">
                     <iframe
-                      src={getVideoEmbedUrl(selectedLesson.videoUrl)}
+                      src={videoEmbedUrl}
                       className="w-full h-full"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                       title={selectedLesson.title}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = `
-          <div class="flex flex-col items-center justify-center h-full text-white p-8">
-            <svg class="w-16 h-16 mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="15" y1="9" x2="9" y2="15"/>
-              <line x1="9" y1="9" x2="15" y2="15"/>
-            </svg>
-            <h3 class="text-xl font-bold mb-2">Video cannot be embedded</h3>
-            <p class="text-gray-300 mb-4 text-center">This video may be private or have embedding disabled.</p>
-            <a href="${selectedLesson.videoUrl}" target="_blank" class="px-6 py-2 bg-[#461EA4] rounded-lg font-semibold hover:bg-[#3a188a]">
-              Watch on YouTube
-            </a>
-          </div>
-        `;
-                      }}
                     />
                   </div>
                 ) : selectedLesson.type === 'video' ? (
                   <div className="aspect-video bg-black flex items-center justify-center text-white">
                     <div className="text-center">
-                      <p>No video URL provided</p>
+                      <p className="font-semibold">No video URL provided</p>
+                      <p className="text-sm text-gray-400 mt-1">Please add a YouTube link in the instructor dashboard.</p>
                     </div>
                   </div>
                 ) : null}
 
-                {/* PDF/PPT/NOTES VIEWER */}
+                {/* ✅ PDF/PPT/NOTES VIEWER */}
                 {(selectedLesson.type === 'ebook' || selectedLesson.type === 'notes' || selectedLesson.type === 'ppt') && selectedLesson.fileUrl && (
                   viewerError ? (
-                    // ERROR STATE
                     <div className="p-16 text-center">
                       <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
                         <svg className="w-10 h-10 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -248,24 +227,13 @@ export default function LearnCourse() {
                       </div>
                       <h3 className="text-xl font-bold text-[#1D1F23] mb-2">Unable to display document</h3>
                       <p className="text-gray-600 mb-6">Please open the file in a new tab to view it.</p>
-                      <a
-                        href={selectedLesson.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#461EA4] text-white font-semibold rounded-lg hover:bg-[#3a188a] transition-colors"
-                      >
+                      <a href={selectedLesson.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 bg-[#461EA4] text-white font-semibold rounded-lg hover:bg-[#3a188a] transition-colors">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15,3 21,3 21,9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
                         Open in New Tab
                       </a>
-                      <button
-                        onClick={() => setViewerError(false)}
-                        className="block mt-4 mx-auto text-sm text-gray-500 hover:text-gray-700 underline"
-                      >
-                        Try loading again
-                      </button>
+                      <button onClick={() => setViewerError(false)} className="block mt-4 mx-auto text-sm text-gray-500 hover:text-gray-700 underline">Try loading again</button>
                     </div>
                   ) : (
-                    // VIEWER with error handling
                     <div className="relative bg-white rounded-xl border border-[#DFE1E4] shadow-sm overflow-hidden" style={{ minHeight: '75vh' }}>
                       <iframe
                         src={viewerUrl}
@@ -284,7 +252,6 @@ export default function LearnCourse() {
                     <p className="text-lg font-semibold">{selectedLesson.type === 'quiz' ? 'Quiz' : 'Lab'} coming soon!</p>
                   </div>
                 )}
-
               </div>
 
               {selectedLesson.content && (
@@ -293,7 +260,6 @@ export default function LearnCourse() {
                   <p className="text-[14px] text-[#374151] whitespace-pre-line leading-relaxed">{selectedLesson.content}</p>
                 </div>
               )}
-
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-[#595C61]">
