@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api";
+import { CheckCircle, Circle } from "lucide-react";
 
 export default function LearnCourse() {
   const { id } = useParams();
@@ -13,6 +14,7 @@ export default function LearnCourse() {
   const [openDays, setOpenDays] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [viewerError, setViewerError] = useState(false);
+  const [completedLessons, setCompletedLessons] = useState(new Set());
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -36,30 +38,54 @@ export default function LearnCourse() {
     fetchCourse();
   }, [id]);
 
+  // Load completed lessons from localStorage when course loads
+  useEffect(() => {
+    if (course?._id) {
+      const saved = localStorage.getItem(`course_${course._id}_completed`);
+      if (saved) {
+        setCompletedLessons(new Set(JSON.parse(saved)));
+      }
+    }
+  }, [course]);
+
+  // Save completed lessons to localStorage whenever it changes
+  useEffect(() => {
+    if (course?._id) {
+      localStorage.setItem(`course_${course._id}_completed`, JSON.stringify([...completedLessons]));
+    }
+  }, [completedLessons, course]);
+
   const toggleDay = (module) => {
     setOpenDays(prev => ({ ...prev, [module]: !prev[module] }));
   };
 
-  // ✅ 1. YouTube Video URL Parser
+  const toggleLessonCompletion = (lessonId) => {
+    setCompletedLessons(prev => {
+      const next = new Set(prev);
+      if (next.has(lessonId)) {
+        next.delete(lessonId);
+      } else {
+        next.add(lessonId);
+      }
+      return next;
+    });
+  };
+
   const getVideoEmbedUrl = (url) => {
     if (!url) return "";
     try {
-      // Handle playlist URLs
       if (url.includes('list=')) {
         const playlistId = url.split('list=')[1].split('&')[0];
         return `https://www.youtube.com/embed/videoseries?list=${playlistId}`;
       }
-      // Handle watch URLs: youtube.com/watch?v=VIDEO_ID
       const watchMatch = url.match(/[?&]v=([^&#]+)/);
       if (watchMatch && watchMatch[1]) {
         return `https://www.youtube.com/embed/${watchMatch[1]}?rel=0`;
       }
-      // Handle short URLs: youtu.be/VIDEO_ID (Your link will match this!)
       const shortMatch = url.match(/youtu\.be\/([^?&#/]+)/);
       if (shortMatch && shortMatch[1]) {
         return `https://www.youtube.com/embed/${shortMatch[1]}?rel=0`;
       }
-      // Handle embed URLs (already in correct format)
       if (url.includes('youtube.com/embed/')) {
         return url;
       }
@@ -70,7 +96,6 @@ export default function LearnCourse() {
     }
   };
 
-  // ✅ 2. Google Drive Document URL Parser
   const getViewerUrl = (url) => {
     if (!url) return null;
     const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -108,6 +133,11 @@ export default function LearnCourse() {
   const isGoogleDrive = selectedLesson.fileUrl?.includes('drive.google.com');
   const viewerUrl = isGoogleDrive ? getViewerUrl(selectedLesson.fileUrl) : selectedLesson.fileUrl;
   const videoEmbedUrl = selectedLesson.type === 'video' ? getVideoEmbedUrl(selectedLesson.videoUrl) : "";
+  
+  const isCurrentLessonCompleted = selectedLesson?._id && completedLessons.has(selectedLesson._id);
+  const totalLessons = course.lessons?.length || 0;
+  const completedCount = completedLessons.size;
+  const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
   return (
     <div className="fixed inset-0 top-16 flex flex-col bg-[#F6F7F9] overflow-hidden">
@@ -121,10 +151,17 @@ export default function LearnCourse() {
             <h1 className="text-sm md:text-base font-bold truncate">{course.title}</h1>
           </div>
         </div>
-        <button onClick={() => navigate("/my-courses")} className="text-xs md:text-sm text-gray-300 hover:text-white flex items-center gap-1 shrink-0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12,19 5,12 12,5" /></svg>
-          <span className="hidden md:inline">Exit Course</span>
-        </button>
+        <div className="flex items-center gap-4">
+          {/* Progress indicator in header */}
+          <div className="hidden md:flex items-center gap-2 text-xs">
+            <span className="text-gray-400">Progress:</span>
+            <span className="font-bold text-green-400">{completedCount}/{totalLessons}</span>
+          </div>
+          <button onClick={() => navigate("/my-courses")} className="text-xs md:text-sm text-gray-300 hover:text-white flex items-center gap-1 shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12,19 5,12 12,5" /></svg>
+            <span className="hidden md:inline">Exit Course</span>
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden relative">
@@ -143,6 +180,21 @@ export default function LearnCourse() {
             <button onClick={() => setSidebarOpen(false)} className="p-1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg></button>
           </div>
 
+          {/* Progress Bar */}
+          <div className="p-4 border-b border-[#DFE1E4] bg-[#FAFAFA]">
+            <div className="flex justify-between text-xs mb-2">
+              <span className="font-semibold text-[#1D1F23]">Course Progress</span>
+              <span className="font-bold text-[#461EA4]">{progressPercent}%</span>
+            </div>
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-[#461EA4] rounded-full transition-all duration-500" 
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{completedCount} of {totalLessons} lessons completed</p>
+          </div>
+
           <div className="flex-1 overflow-y-auto p-4">
             <h2 className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider mb-4 hidden md:block">Course Content</h2>
             {Object.entries(lessonsByModule).map(([module, lessons]) => (
@@ -153,16 +205,37 @@ export default function LearnCourse() {
                 </button>
                 {openDays[module] && (
                   <div className="mt-2 space-y-1">
-                    {lessons.map((lesson) => (
-                      <button key={lesson._id} onClick={() => { setSelectedLesson(lesson); setSidebarOpen(false); setViewerError(false); }}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${selectedLesson?._id === lesson._id ? "bg-[#461EA4] text-white shadow-md" : "hover:bg-[#F6F7F9] text-[#374151]"}`}>
-                        <span className={`shrink-0 ${selectedLesson?._id === lesson._id ? "text-white" : "text-[#9CA3AF]"}`}>{getLessonIcon(lesson.type)}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{lesson.title}</p>
-                          <p className={`text-xs capitalize ${selectedLesson?._id === lesson._id ? "text-white/70" : "text-[#9CA3AF]"}`}>{lesson.type}</p>
-                        </div>
-                      </button>
-                    ))}
+                    {lessons.map((lesson) => {
+                      const isCompleted = completedLessons.has(lesson._id);
+                      const isSelected = selectedLesson?._id === lesson._id;
+                      return (
+                        <button 
+                          key={lesson._id} 
+                          onClick={() => { setSelectedLesson(lesson); setSidebarOpen(false); setViewerError(false); }}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
+                            isSelected 
+                              ? "bg-[#461EA4] text-white shadow-md" 
+                              : "hover:bg-[#F6F7F9] text-[#374151]"
+                          }`}
+                        >
+                          <div className={`shrink-0 ${isSelected ? "text-white" : isCompleted ? "text-green-500" : "text-[#9CA3AF]"}`}>
+                            {isCompleted ? (
+                              <CheckCircle className="w-4 h-4" />
+                            ) : (
+                              getLessonIcon(lesson.type)
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium truncate ${isSelected ? "text-white" : "text-[#1D1F23]"}`}>
+                              {lesson.title}
+                            </p>
+                            <p className={`text-xs capitalize ${isSelected ? "text-white/70" : "text-[#9CA3AF]"}`}>
+                              {lesson.type}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -192,9 +265,32 @@ export default function LearnCourse() {
                 )}
               </div>
 
+              {/* Mark as Complete Button */}
+              <div className="mb-6">
+                <button
+                  onClick={() => toggleLessonCompletion(selectedLesson._id)}
+                  className={`w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                    isCurrentLessonCompleted
+                      ? "bg-green-500 hover:bg-green-600 text-white"
+                      : "bg-white hover:bg-gray-50 text-[#1D1F23] border-2 border-[#DFE1E4]"
+                  }`}
+                >
+                  {isCurrentLessonCompleted ? (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      <span>Completed</span>
+                    </>
+                  ) : (
+                    <>
+                      <Circle className="w-5 h-5" />
+                      <span>Mark as Complete</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
               <div className="bg-white rounded-xl border border-[#DFE1E4] shadow-sm overflow-hidden">
-                
-                {/* ✅ VIDEO PLAYER */}
+                {/* VIDEO */}
                 {selectedLesson.type === 'video' && videoEmbedUrl ? (
                   <div className="aspect-video bg-black w-full">
                     <iframe
@@ -214,7 +310,7 @@ export default function LearnCourse() {
                   </div>
                 ) : null}
 
-                {/* ✅ PDF/PPT/NOTES VIEWER */}
+                {/* PDF/PPT/NOTES VIEWER */}
                 {(selectedLesson.type === 'ebook' || selectedLesson.type === 'notes' || selectedLesson.type === 'ppt') && selectedLesson.fileUrl && (
                   viewerError ? (
                     <div className="p-16 text-center">
