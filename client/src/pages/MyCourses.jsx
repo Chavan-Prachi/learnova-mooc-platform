@@ -8,22 +8,46 @@ export default function MyCourses() {
     const { user } = useContext(AuthContext);
     const [enrollments, setEnrollments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null); // New: Track errors
 
     useEffect(() => {
-        const fetchMyCourses = async () => {
-            if (!user) return;
+        const fetchEnrollments = async () => {
             try {
-                // Fetch the enrollments we built earlier!
                 const res = await API.get('/api/enrollments/my-courses');
-                setEnrollments(res.data);
-            } catch (error) {
-                console.error("Failed to fetch enrolled courses:", error);
+                
+                // SAFETY: Ensure we always have an array, even if the API returns something weird
+                const data = Array.isArray(res.data) ? res.data : [];
+                console.log("Enrollments fetched:", data); 
+                
+                setEnrollments(data);
+                setError(null);
+            } catch (err) {
+                console.error("Failed to fetch enrollments:", err);
+                setError("Could not load your courses. Please try again later.");
+                setEnrollments([]); // Fallback to empty array to prevent .map crashes
             } finally {
                 setLoading(false);
             }
         };
-        fetchMyCourses();
+
+        if (user) {
+            fetchEnrollments();
+        } else {
+            setLoading(false);
+        }
     }, [user]);
+
+    // If user is not logged in, redirect or show message
+    if (!user && !loading) {
+        return (
+            <div className="min-h-screen bg-[#F6F7F9] flex items-center justify-center">
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold text-[#1D1F23] mb-4">Please log in to view your courses.</h2>
+                    <Link to="/login" className="text-[#461EA4] font-semibold hover:underline">Go to Login</Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#F6F7F9] py-10">
@@ -32,35 +56,50 @@ export default function MyCourses() {
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-[32px] font-extrabold text-[#1D1F23]">My Learning</h1>
-                    <p className="text-[14px] text-[#595C61] mt-1">Welcome back, {user?.name}. Here are the courses you are currently taking.</p>
+                    <p className="text-[14px] text-[#595C61] mt-1">Welcome back, {user?.name || 'Student'}. Here are the courses you are currently taking.</p>
                 </div>
+
+                {/* Error State */}
+                {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
+                        {error}
+                    </div>
+                )}
 
                 {/* Course List */}
                 {loading ? (
                     <div className="flex items-center justify-center h-64 text-[#595C61]">Loading your courses...</div>
                 ) : enrollments.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-xl border border-[#DFE1E4] border-dashed p-10">
-                        <BookOpen className="w-16 h-16 text-[#9CA3AF] mb-4" />
-                        <p className="text-[#595C61] font-medium text-lg mb-2">You haven't enrolled in any courses yet.</p>
-                        <p className="text-[#9CA3AF] text-sm mb-6">Start your learning journey today!</p>
-                        <Link
-                            to="/courses"
-                            className="h-12 px-8 bg-[#461EA4] text-white rounded-[12px] font-semibold hover:bg-[#3a188a] transition-colors"
-                        >
-                            Browse Catalog
-                        </Link>
+                    <div className="flex flex-col items-center justify-center min-h-[500px] bg-white rounded-xl border border-[#DFE1E4] border-dashed p-10">
+                        <div className="text-center max-w-md">
+                            <div className="w-20 h-20 bg-[#F6F7F9] rounded-full flex items-center justify-center mx-auto mb-6">
+                                <BookOpen className="w-10 h-10 text-[#9CA3AF]" />
+                            </div>
+                            <h2 className="text-[22px] font-bold text-[#1D1F23] mb-2">You haven't enrolled in any courses yet.</h2>
+                            <p className="text-[14px] text-[#595C61] mb-8">Start your learning journey today!</p>
+
+                            <Link
+                                to="/courses"
+                                className="inline-flex items-center justify-center h-12 px-8 bg-[#461EA4] text-white rounded-[12px] font-semibold hover:bg-[#3a188a] transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                            >
+                                Browse Catalog
+                            </Link>
+                        </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {enrollments.map((enrollment) => {
                             const course = enrollment.course;
-                            // Calculate fake progress for UI purposes (since we haven't built lesson tracking yet)
+
+                            // SAFETY CHECK: If the course was deleted, skip it entirely
+                            if (!course) return null;
+
                             const progress = enrollment.progress || 0;
 
                             return (
                                 <Link
                                     key={enrollment._id}
-                                    to={`/course/${course._id}`}
+                                    to={`/learn/${course._id}`}
                                     className="bg-white rounded-xl border border-[#DFE1E4] overflow-hidden hover:shadow-md transition-all group flex flex-col"
                                 >
                                     <img

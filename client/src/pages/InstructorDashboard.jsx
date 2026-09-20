@@ -15,20 +15,20 @@ export default function InstructorDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editCourseId, setEditCourseId] = useState(null);
   const [editingLessonId, setEditingLessonId] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(false); // Only used for course thumbnails now
+  
   const [courseData, setCourseData] = useState({
     title: "", description: "", category: "Programming", price: "", thumbnail: ""
   });
 
-
   const [lessonData, setLessonData] = useState({
     title: "",
-    module: "Day 1", // <-- ADDED THIS
+    module: "Day 1",
     type: "video",
     videoUrl: "",
     content: "",
     duration: "",
-    fileUrl: "",
+    fileUrl: "", // This will now hold the Google Drive/Document URL
     quizData: { questions: [], passingScore: 70 },
     labConfig: { environment: "", instructions: "", resources: [] }
   });
@@ -53,7 +53,7 @@ export default function InstructorDashboard() {
   };
 
   const handleImageUpload = async (file) => {
-    setUploading(true); // Start loading
+    setUploading(true);
     const formData = new FormData();
     formData.append('image', file);
     try {
@@ -65,24 +65,7 @@ export default function InstructorDashboard() {
       console.error(error);
       alert("Failed to upload image. (Check file size, max 10MB)");
     } finally {
-      setUploading(false); // Stop loading
-    }
-  };
-
-  const handleFileUpload = async (file) => {
-    setUploading(true); // Start loading
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      const res = await API.post('/api/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setLessonData({ ...lessonData, fileUrl: res.data.url });
-    } catch (error) {
-      console.error(error);
-      alert("Failed to upload file. (Check file size, max 10MB)");
-    } finally {
-      setUploading(false); // Stop loading
+      setUploading(false);
     }
   };
 
@@ -109,13 +92,12 @@ export default function InstructorDashboard() {
     }
   };
 
-
   const handleAddLesson = async (e) => {
     e.preventDefault();
 
     const lessonPayload = {
       title: lessonData.title,
-      module: lessonData.module, // <-- MAKE SURE THIS IS HERE!
+      module: lessonData.module,
       type: lessonData.type,
       videoUrl: lessonData.videoUrl || "",
       content: lessonData.content || "",
@@ -155,7 +137,7 @@ export default function InstructorDashboard() {
   const handleEditLesson = (courseId, lesson) => {
     setLessonData({
       title: lesson.title,
-      module: lesson.module || "Day 1", // <-- THIS WAS MISSING!
+      module: lesson.module || "Day 1",
       type: lesson.type,
       videoUrl: lesson.videoUrl || "",
       content: lesson.content || "",
@@ -263,7 +245,7 @@ export default function InstructorDashboard() {
 
                   {/* Lessons List */}
                   {course.lessons?.length > 0 && (
-                    <div className="mb-4 space-y-2">
+                    <div className="mb-4 space-y-2 max-h-40 overflow-y-auto">
                       {course.lessons.map((lesson) => (
                         <div key={lesson._id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
                           {getLessonIcon(lesson.type)}
@@ -306,7 +288,8 @@ export default function InstructorDashboard() {
                   </select>
                   <input type="number" placeholder="0 for Free" value={courseData.price} onChange={e => setCourseData({ ...courseData, price: e.target.value === "" ? "" : Number(e.target.value) })} className="h-12 px-4 bg-[#F6F7F9] border border-[#DFE1E4] rounded-[12px] outline-none focus:border-[#461EA4]" />
                 </div>
-                {/* Drag & Drop Image Upload */}
+                
+                {/* Course Thumbnail Upload (Keep this, it's useful) */}
                 <div className="relative">
                   <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-[12px] cursor-pointer transition-colors ${uploading
                     ? 'bg-gray-100 cursor-not-allowed border-[#461EA4]'
@@ -327,7 +310,7 @@ export default function InstructorDashboard() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                         </svg>
                         <p className="text-[12px] text-[#595C61]">
-                          <span className="font-semibold text-[#461EA4]">Click to upload</span> or drag and drop
+                          <span className="font-semibold text-[#461EA4]">Click to upload</span> course thumbnail
                         </p>
                       </div>
                     )}
@@ -340,7 +323,6 @@ export default function InstructorDashboard() {
                     />
                   </label>
 
-                  {/* Remove Button (Only shows when image is uploaded and not currently uploading) */}
                   {courseData.thumbnail && !uploading && (
                     <button
                       type="button"
@@ -350,6 +332,23 @@ export default function InstructorDashboard() {
                       ✕
                     </button>
                   )}
+                  <div className="flex gap-3 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowCourseForm(false)}
+                      className="flex-1 h-12 bg-gray-100 text-[#1D1F23] rounded-[12px] font-semibold hover:bg-gray-200 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={uploading}
+                      className={`flex-1 h-12 text-white rounded-[12px] font-semibold transition-colors ${uploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#461EA4] hover:bg-[#3a188a]'
+                        }`}
+                    >
+                      {uploading ? 'Processing...' : (isEditing ? "Save Changes" : "Create Course")}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
@@ -375,18 +374,29 @@ export default function InstructorDashboard() {
                   <option value="Day 4">Day 4</option>
                   <option value="Day 5">Day 5</option>
                 </select>
+                
                 <select value={lessonData.type} onChange={e => setLessonData({ ...lessonData, type: e.target.value })} className="h-12 px-4 bg-[#F6F7F9] border border-[#DFE1E4] rounded-[12px] outline-none focus:border-[#461EA4]">
-                  <option value="video"> Video Lecture</option>
+                  <option value="video">🎥 Video Lecture</option>
                   <option value="ebook">📚 E-Book / PDF</option>
+                  <option value="ppt">📊 Lecture PPT</option>
+                  <option value="notes">📝 Revision Notes</option>
                   <option value="quiz">❓ Quiz / Assessment</option>
                   <option value="lab">🔬 Virtual Lab</option>
-                  <option value="notes"> Revision Notes</option>
-                  <option value="ppt">📊 Lecture PPT</option>
                 </select>
 
+                {/* ✅ VIDEO URL INPUT */}
                 {lessonData.type === 'video' && (
                   <>
-                    <input required placeholder="Video URL (YouTube, Vimeo, etc.)" value={lessonData.videoUrl} onChange={e => setLessonData({ ...lessonData, videoUrl: e.target.value })} className="h-12 px-4 bg-[#F6F7F9] border border-[#DFE1E4] rounded-[12px] outline-none focus:border-[#461EA4]" />
+                    <div>
+                      <input 
+                        required 
+                        placeholder="Paste YouTube Video URL (e.g., https://youtube.com/watch?v=...)" 
+                        value={lessonData.videoUrl} 
+                        onChange={e => setLessonData({ ...lessonData, videoUrl: e.target.value })} 
+                        className="w-full h-12 px-4 bg-[#F6F7F9] border border-[#DFE1E4] rounded-[12px] outline-none focus:border-[#461EA4]" 
+                      />
+                      <p className="text-[11px] text-[#9CA3AF] mt-1 ml-1">Only YouTube links are supported for embedding.</p>
+                    </div>
                     <input
                       required
                       type="number"
@@ -398,27 +408,18 @@ export default function InstructorDashboard() {
                   </>
                 )}
 
+                {/* ✅ DOCUMENT URL INPUT (Replaces File Upload) */}
                 {(lessonData.type === 'ebook' || lessonData.type === 'notes' || lessonData.type === 'ppt') && (
-                  <>
-                    <div className="relative">
-                      <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#DFE1E4] bg-[#F6F7F9] rounded-[12px] cursor-pointer ${uploading ? 'cursor-not-allowed opacity-50' : ''}`}>
-                        {uploading ? (
-                          <p className="text-[14px] text-[#461EA4] font-bold animate-pulse">⏳ Uploading File... Please wait</p>
-                        ) : lessonData.fileUrl ? (
-                          <p className="text-[12px] text-green-600 font-semibold">File Uploaded! ✅</p>
-                        ) : (
-                          <p className="text-[12px] text-[#595C61]">Click to upload PDF/PPT file</p>
-                        )}
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept=".pdf,.ppt,.pptx,.doc,.docx"
-                          disabled={uploading} // Disable while uploading
-                          onChange={(e) => e.target.files[0] && handleFileUpload(e.target.files[0])}
-                        />
-                      </label>
-                    </div>
-                  </>
+                  <div>
+                    <input 
+                      required 
+                      placeholder="Paste Google Drive or Document URL" 
+                      value={lessonData.fileUrl} 
+                      onChange={e => setLessonData({ ...lessonData, fileUrl: e.target.value })} 
+                      className="w-full h-12 px-4 bg-[#F6F7F9] border border-[#DFE1E4] rounded-[12px] outline-none focus:border-[#461EA4]" 
+                    />
+                    <p className="text-[11px] text-[#9CA3AF] mt-1 ml-1">Make sure the Google Drive link is set to "Anyone with the link can view".</p>
+                  </div>
                 )}
 
                 {lessonData.type === 'quiz' && (

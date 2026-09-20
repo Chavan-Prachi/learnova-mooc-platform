@@ -1,8 +1,10 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import ScrollToTop from "./components/ScrollToTop"; // <-- ADD THIS IMPORT
+import ScrollToTop from "./components/ScrollToTop";
+
+// Pages
 import HomePage from "./pages/HomePage";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
@@ -11,7 +13,9 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import MyCourses from "./pages/MyCourses";
+import LearnCourse from "./pages/LearnCourse"; // <-- 1. ADDED THIS IMPORT
 import TestEnrollment from "./pages/TestEnrollment";
+
 function PageWrapper({ children, title }) {
   useEffect(() => {
     document.title = title ? `${title} - Learnova` : "Learnova - Learn Without Limits";
@@ -26,7 +30,10 @@ function AppRoutes() {
       <Route path="/" element={<PageWrapper title="Home"><HomePage /></PageWrapper>} />
       <Route path="/courses" element={<PageWrapper title="Data Science Courses"><Courses /></PageWrapper>} />
       <Route path="/course/:id" element={<PageWrapper title="Course Details"><CourseDetail /></PageWrapper>} />
-      <Route path="/resources" element={<PageWrapper title="Resources Hub"><Resources /></PageWrapper>} />
+      
+      {/* 2. ADDED THIS ROUTE FOR THE STUDENT LEARNING PLAYER */}
+      <Route path="/learn/:id" element={<PageWrapper title="Learning"><LearnCourse /></PageWrapper>} />   
+      <Route path="/resources" element={<PageWrapper title="Resources"><Resources /></PageWrapper>} />
       <Route path="/login" element={<PageWrapper title="Login"><Login /></PageWrapper>} />
       <Route path="/register" element={<PageWrapper title="Register"><Register /></PageWrapper>} />
       <Route path="/instructor" element={<PageWrapper title="Instructor Dashboard"><InstructorDashboard /></PageWrapper>} />
@@ -39,7 +46,7 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <ScrollToTop /> {/* <-- ADD THIS RIGHT HERE */}
+      <ScrollToTop />
       <div className="min-h-screen bg-[#F6F7F9] flex flex-col">
         <Navbar />
         <main className="flex-1">

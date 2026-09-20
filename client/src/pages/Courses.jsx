@@ -55,19 +55,26 @@ export default function Courses() {
   };
 
   // Fetch real courses from backend on mount
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const res = await API.get('/api/courses');
-        setCourses(res.data);
-      } catch (error) {
-        console.error("Failed to fetch courses:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCourses();
-  }, []);
+ // Fetch real courses from backend on mount
+useEffect(() => {
+  const fetchCourses = async () => {
+    try {
+      const res = await API.get('/api/courses');
+      
+      // FILTER OUT the mock "Complete Node.js Bootcamp" courses
+      const filteredCourses = res.data.filter(
+        course => course.title !== "Complete Node.js Bootcamp"
+      );
+      
+      setCourses(filteredCourses);
+    } catch (error) {
+      console.error("Failed to fetch courses:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchCourses();
+}, []);
 
   return (
     <div className="min-h-screen bg-[#F5F5FA]">

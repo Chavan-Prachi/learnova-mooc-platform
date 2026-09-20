@@ -38,9 +38,6 @@ export default function Navbar() {
               </li>
             )}
 
-            <li>
-              <a href="#">For Business</a>
-            </li>
           </ul>
 
         </div>
