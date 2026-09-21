@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api";
 import { CheckCircle, Circle } from "lucide-react";
+import QuizComponent from "../components/QuizComponent";
 
 export default function LearnCourse() {
   const { id } = useParams();
@@ -133,7 +134,7 @@ export default function LearnCourse() {
   const isGoogleDrive = selectedLesson.fileUrl?.includes('drive.google.com');
   const viewerUrl = isGoogleDrive ? getViewerUrl(selectedLesson.fileUrl) : selectedLesson.fileUrl;
   const videoEmbedUrl = selectedLesson.type === 'video' ? getVideoEmbedUrl(selectedLesson.videoUrl) : "";
-  
+
   const isCurrentLessonCompleted = selectedLesson?._id && completedLessons.has(selectedLesson._id);
   const totalLessons = course.lessons?.length || 0;
   const completedCount = completedLessons.size;
@@ -187,8 +188,8 @@ export default function LearnCourse() {
               <span className="font-bold text-[#461EA4]">{progressPercent}%</span>
             </div>
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-[#461EA4] rounded-full transition-all duration-500" 
+              <div
+                className="h-full bg-[#461EA4] rounded-full transition-all duration-500"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -209,14 +210,13 @@ export default function LearnCourse() {
                       const isCompleted = completedLessons.has(lesson._id);
                       const isSelected = selectedLesson?._id === lesson._id;
                       return (
-                        <button 
-                          key={lesson._id} 
+                        <button
+                          key={lesson._id}
                           onClick={() => { setSelectedLesson(lesson); setSidebarOpen(false); setViewerError(false); }}
-                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
-                            isSelected 
-                              ? "bg-[#461EA4] text-white shadow-md" 
-                              : "hover:bg-[#F6F7F9] text-[#374151]"
-                          }`}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${isSelected
+                            ? "bg-[#461EA4] text-white shadow-md"
+                            : "hover:bg-[#F6F7F9] text-[#374151]"
+                            }`}
                         >
                           <div className={`shrink-0 ${isSelected ? "text-white" : isCompleted ? "text-green-500" : "text-[#9CA3AF]"}`}>
                             {isCompleted ? (
@@ -265,29 +265,31 @@ export default function LearnCourse() {
                 )}
               </div>
 
-              {/* Mark as Complete Button */}
-              <div className="mb-6">
-                <button
-                  onClick={() => toggleLessonCompletion(selectedLesson._id)}
-                  className={`w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-                    isCurrentLessonCompleted
-                      ? "bg-green-500 hover:bg-green-600 text-white"
-                      : "bg-white hover:bg-gray-50 text-[#1D1F23] border-2 border-[#DFE1E4]"
-                  }`}
-                >
-                  {isCurrentLessonCompleted ? (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      <span>Completed</span>
-                    </>
-                  ) : (
-                    <>
-                      <Circle className="w-5 h-5" />
-                      <span>Mark as Complete</span>
-                    </>
-                  )}
-                </button>
-              </div>
+                            {/* Mark as Complete Button (HIDDEN for Quizzes) */}
+              {selectedLesson.type !== 'quiz' && (
+                <div className="mb-6">
+                  <button
+                    onClick={() => toggleLessonCompletion(selectedLesson._id)}
+                    className={`w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                      isCurrentLessonCompleted
+                        ? "bg-green-500 hover:bg-green-600 text-white"
+                        : "bg-white hover:bg-gray-50 text-[#1D1F23] border-2 border-[#DFE1E4]"
+                    }`}
+                  >
+                    {isCurrentLessonCompleted ? (
+                      <>
+                        <CheckCircle className="w-5 h-5" />
+                        <span>Completed</span>
+                      </>
+                    ) : (
+                      <>
+                        <Circle className="w-5 h-5" />
+                        <span>Mark as Complete</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
 
               <div className="bg-white rounded-xl border border-[#DFE1E4] shadow-sm overflow-hidden">
                 {/* VIDEO */}
@@ -342,20 +344,63 @@ export default function LearnCourse() {
                   )
                 )}
 
-                {/* QUIZ / LAB */}
-                {(selectedLesson.type === 'quiz' || selectedLesson.type === 'lab') && (
-                  <div className="p-16 text-center text-[#595C61]">
-                    <p className="text-lg font-semibold">{selectedLesson.type === 'quiz' ? 'Quiz' : 'Lab'} coming soon!</p>
+                {/* QUIZ / ASSESSMENT */}
+                {selectedLesson.type === 'quiz' && (
+                  <div className="p-6 md:p-8">
+                    <div className="max-w-3xl mx-auto">
+                      {!selectedLesson.quizData || !selectedLesson.quizData.questions || selectedLesson.quizData.questions.length === 0 ? (
+                        /* No Quiz Questions Yet */
+                        <div className="bg-white rounded-xl border border-[#DFE1E4] p-16 text-center">
+                          <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg className="w-10 h-10 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10" />
+                              <line x1="12" y1="8" x2="12" y2="12" />
+                              <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
+                          </div>
+                          <h3 className="text-2xl font-bold text-[#1D1F23] mb-2">Quiz Not Ready Yet</h3>
+                          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                            The instructor hasn't added questions to this quiz yet. Please check back later or contact your instructor.
+                          </p>
+                          <button
+                            onClick={() => navigate("/my-courses")}
+                            className="px-6 py-3 bg-[#461EA4] text-white font-semibold rounded-lg hover:bg-[#3a188a] transition-colors"
+                          >
+                            Back to My Courses
+                          </button>
+                        </div>
+                      ) : (
+                        /* Quiz Component with Questions */
+                        <QuizComponent quizData={selectedLesson.quizData} onComplete={() => toggleLessonCompletion(selectedLesson._id)} />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* LAB */}
+                {selectedLesson.type === 'lab' && (
+                  <div className="p-16 text-center">
+                    <div className="w-24 h-24 bg-[#461EA4]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <svg className="w-12 h-12 text-[#461EA4]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M10 2v7.31" />
+                        <path d="M14 2v7.31" />
+                        <path d="M8.5 2h7" />
+                        <path d="M14 9.3a6.5 6.5 0 1 1-4 0" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-[#1D1F23] mb-2">Virtual Lab Coming Soon</h3>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      This interactive lab environment is being set up. You'll be able to practice hands-on skills here soon!
+                    </p>
+                  </div>
+                )}
+                {selectedLesson.content && (
+                  <div className="mt-8 bg-white rounded-xl p-6 border border-[#DFE1E4] shadow-sm">
+                    <h4 className="text-sm font-bold text-[#1D1F23] mb-3 uppercase tracking-wider">About this lesson</h4>
+                    <p className="text-[14px] text-[#374151] whitespace-pre-line leading-relaxed">{selectedLesson.content}</p>
                   </div>
                 )}
               </div>
-
-              {selectedLesson.content && (
-                <div className="mt-8 bg-white rounded-xl p-6 border border-[#DFE1E4] shadow-sm">
-                  <h4 className="text-sm font-bold text-[#1D1F23] mb-3 uppercase tracking-wider">About this lesson</h4>
-                  <p className="text-[14px] text-[#374151] whitespace-pre-line leading-relaxed">{selectedLesson.content}</p>
-                </div>
-              )}
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-[#595C61]">

@@ -14,6 +14,7 @@ export default function InstructorCourseManager() {
     const [editingLessonId, setEditingLessonId] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [openModules, setOpenModules] = useState({});
+
     const toggleModule = (module) => setOpenModules(prev => ({ ...prev, [module]: !prev[module] }));
 
     const [lessonData, setLessonData] = useState({
@@ -49,6 +50,7 @@ export default function InstructorCourseManager() {
     const handleAddLesson = async (e) => {
         e.preventDefault();
 
+        // ✅ FIX: Include quizData and labConfig in the payload so they actually save!
         const lessonPayload = {
             title: lessonData.title,
             module: lessonData.module,
@@ -56,7 +58,9 @@ export default function InstructorCourseManager() {
             videoUrl: lessonData.videoUrl || "",
             content: lessonData.content || "",
             duration: lessonData.duration === "" ? 0 : Number(lessonData.duration),
-            fileUrl: lessonData.fileUrl || ""
+            fileUrl: lessonData.fileUrl || "",
+            quizData: lessonData.type === 'quiz' ? lessonData.quizData : undefined,
+            labConfig: lessonData.type === 'lab' ? lessonData.labConfig : undefined
         };
 
         try {
@@ -110,6 +114,33 @@ export default function InstructorCourseManager() {
         });
         setShowLessonForm(false);
         setEditingLessonId(null);
+    };
+
+    // ✅ FIX: Added missing addQuizQuestion function
+    const addQuizQuestion = () => {
+        setLessonData({
+            ...lessonData,
+            quizData: {
+                ...lessonData.quizData,
+                questions: [
+                    ...lessonData.quizData.questions,
+                    { question: "", options: ["", "", "", ""], correctAnswer: 0, points: 1 }
+                ]
+            }
+        });
+    };
+
+    // ✅ FIX: Added missing updateQuizQuestion function
+    const updateQuizQuestion = (index, field, value) => {
+        const updated = [...lessonData.quizData.questions];
+        updated[index][field] = value;
+        setLessonData({
+            ...lessonData,
+            quizData: {
+                ...lessonData.quizData,
+                questions: updated
+            }
+        });
     };
 
     const getLessonIcon = (type) => {
@@ -249,9 +280,9 @@ export default function InstructorCourseManager() {
                     )}
                 </div>
 
-                {/* Lesson Form Modal (Same as before) */}
+                {/* Lesson Form Modal */}
                 {showLessonForm && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
                         <div className="bg-white rounded-2xl w-full max-w-2xl p-8 shadow-2xl my-8">
                             <h2 className="text-[24px] font-extrabold text-[#1D1F23] mb-6">{editingLessonId ? "Edit Lesson" : "Add New Lesson"}</h2>
                             <form onSubmit={handleAddLesson} className="flex flex-col gap-4">
@@ -333,4 +364,3 @@ export default function InstructorCourseManager() {
         </div>
     );
 }
-
