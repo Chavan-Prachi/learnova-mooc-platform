@@ -2,8 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import API from "../api";
-import { ArrowLeft, Plus, Trash2, Edit, Video, FileText, HelpCircle, FlaskConical, Presentation, File } from "lucide-react";
-
+import { ArrowLeft, Plus, Trash2, Edit, Video, FileText, HelpCircle, FlaskConical, Presentation, File, BookOpen, DollarSign } from "lucide-react";
 export default function InstructorCourseManager() {
     const { courseId } = useParams();
     const navigate = useNavigate();
@@ -179,25 +178,41 @@ export default function InstructorCourseManager() {
                     </button>
                 </div>
 
-                {/* Course Info */}
-                <div className="bg-white rounded-xl border border-[#DFE1E4] p-6 mb-8">
-                    <div className="flex items-start gap-6">
-                        <img
-                            src={course.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=200&h=150&fit=crop"}
-                            alt={course.title}
-                            className="w-48 h-32 object-cover rounded-lg"
-                        />
-                        <div className="flex-1">
-                            <h1 className="text-[28px] font-bold text-[#1D1F23] mb-2">{course.title}</h1>
-                            <p className="text-[14px] text-[#595C61] mb-3">{course.description}</p>
-                            <div className="flex items-center gap-4 text-sm">
-                                <span className="px-3 py-1 bg-[#461EA4]/10 text-[#461EA4] rounded-full font-semibold">{course.category}</span>
-                                <span className="font-bold text-[#1D1F23]">{course.lessons?.length || 0} Lessons</span>
-                                <span className="font-bold text-[#1D1F23]">{course.price === 0 ? "Free" : `$${course.price}`}</span>
-                            </div>
-                        </div>
-                    </div>
+                {/* Course Header - Clean & Professional */}
+<div className="bg-gradient-to-br from-[#461EA4] to-[#5533CC] rounded-xl p-8 mb-6 text-white">
+    <div className="flex flex-col md:flex-row gap-6 items-start">
+        <img
+            src={course.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&h=200&fit=crop"}
+            alt={course.title}
+            className="w-full md:w-64 h-40 object-cover rounded-lg shadow-lg border-2 border-white/20"
+        />
+        <div className="flex-1">
+            <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold mb-3">
+                {course.category}
+            </span>
+            <h1 className="text-2xl md:text-3xl font-bold mb-4 leading-tight">{course.title}</h1>
+            
+            <div className="flex flex-wrap items-center gap-4 text-sm text-white/90">
+                <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    <span>{course.lessons?.length || 0} Lessons</span>
                 </div>
+                <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4" />
+                    <span>{course.price === 0 ? "Free" : `$${course.price}`}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{/* About this course Card - Matches Student View */}
+<div className="bg-white rounded-xl border border-[#E5E7EB] p-6 mb-8 shadow-sm">
+    <h2 className="text-xl font-bold text-[#111827] mb-4">About this course</h2>
+    <div className="text-sm text-[#374151] leading-relaxed whitespace-pre-line">
+        {course.description || "No description provided yet."}
+    </div>
+</div>
 
                 {/* Clean Accordion Curriculum UI */}
                 <div className="bg-white rounded-xl border border-[#DFE1E4] p-6">

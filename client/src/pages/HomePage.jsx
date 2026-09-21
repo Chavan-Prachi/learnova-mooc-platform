@@ -180,11 +180,12 @@ export default function HomePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredCourses.map((course) => (
-              <div
-                key={course._id}
+              <div 
+                key={course._id} 
                 className="bg-white rounded-xl border border-[#DFE1E4] overflow-hidden hover:shadow-2xl hover:-translate-y-2 hover:border-[#461EA4]/40 transition-all duration-300 group flex flex-col"
-              >  {/* Course Thumbnail */}
-                <div className="relative h-48 overflow-hidden">
+              >
+                {/* Course Thumbnail (CLICKABLE) */}
+                <Link to={`/course/${course._id}`} className="relative h-48 overflow-hidden block">
                   <img
                     src={course.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=220&fit=crop"}
                     alt={course.title}
@@ -195,13 +196,16 @@ export default function HomePage() {
                       {course.category || "Programming"}
                     </span>
                   </div>
-                </div>
+                </Link>
 
                 {/* Course Info */}
                 <div className="p-5 flex-1 flex flex-col">
-                  <h3 className="text-[16px] font-bold text-[#1D1F23] mb-2 line-clamp-2 min-h-[48px]">
-                    {course.title}
-                  </h3>
+                  {/* Course Title (CLICKABLE) */}
+                  <Link to={`/course/${course._id}`} className="block mb-2">
+                    <h3 className="text-[16px] font-bold text-[#1D1F23] line-clamp-2 min-h-[48px] group-hover:text-[#461EA4] transition-colors">
+                      {course.title}
+                    </h3>
+                  </Link>
 
                   {/* Course Meta */}
                   <div className="flex items-center gap-4 text-xs text-[#595C61] mb-3 mt-auto">
@@ -228,7 +232,7 @@ export default function HomePage() {
                       to={`/course/${course._id}`}
                       className="px-4 py-2 border-2 border-[#461EA4] text-[#461EA4] rounded-lg text-[13px] font-semibold hover:bg-[#461EA4] hover:text-white transition-colors"
                     >
-                      Enroll
+                      View Course
                     </Link>
                   </div>
                 </div>
