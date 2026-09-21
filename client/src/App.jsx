@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
+import InstructorCourseManager from "./pages/InstructorCourseManager";
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -39,6 +40,7 @@ function AppRoutes() {
       <Route path="/instructor" element={<PageWrapper title="Instructor Dashboard"><InstructorDashboard /></PageWrapper>} />
       <Route path="/my-courses" element={<PageWrapper title="My Learning"><MyCourses /></PageWrapper>} />
       <Route path="/test-enrollment" element={<TestEnrollment />} />
+      <Route path="/instructor/course/:courseId" element={<InstructorCourseManager />} />
     </Routes>
   );
 }
