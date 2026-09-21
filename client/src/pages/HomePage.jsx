@@ -1,16 +1,20 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { 
-  Star, 
-  Database, 
-  BarChart3, 
-  Palette, 
-  Code, 
-  DollarSign, 
-  Heart, 
-  Camera, 
-  Monitor 
+import {
+  Star,
+  Database,
+  BarChart3,
+  Palette,
+  Code,
+  DollarSign,
+  Heart,
+  Camera,
+  Monitor
 } from "lucide-react";
+import API from "../api";
 import './Home.css';
+
+// Assets
 import vislyImage from "../assets/visily-image.png";
 import student1 from "../assets/student1.webp";
 import student2 from "../assets/student2.webp";
@@ -28,57 +32,32 @@ const CATEGORIES = [
   { label: "Finance", icon: Monitor, count: "420 courses" },
 ];
 
-const FEATURED_COURSES = [
-  {
-    title: "Advanced Data Analysis with Python & SQL",
-    category: "DATA ANALYSIS",
-    rating: 4.5,
-    reviews: 1240,
-    duration: "24 hours",
-    price: "Free",
-    isFree: true,
-    img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=220&fit=crop&auto=format",
-  },
-  {
-    title: "Machine Learning Fundamentals & Neural Networks",
-    category: "MACHINE LEARNING",
-    rating: 4.4,
-    reviews: 850,
-    duration: "24 hours",
-    price: "Free",
-    isFree: true,
-    img: "https://images.unsplash.com/photo-1762281429414-5ee5f2dbb243?w=400&h=220&fit=crop&auto=format",
-  },
-  {
-    title: "Mastering AI Strategy for Modern Business",
-    category: "ARTIFICIAL INTELLIGENCE",
-    rating: 4.4,
-    reviews: 2100,
-    duration: "24 hours",
-    price: "$49",
-    isFree: false,
-    img: "https://images.unsplash.com/photo-1737644467636-6b0053476bb2?w=400&h=220&fit=crop&auto=format",
-  },
-];
-
-function StarRating({ rating }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <svg key={i} width="13" height="13" viewBox="0 0 24 24" fill={i <= Math.round(rating) ? "#F59E0B" : "none"} stroke="#F59E0B" strokeWidth="1.5">
-          <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
-        </svg>
-      ))}
-    </div>
-  );
-}
-
 export default function HomePage() {
+  const [featuredCourses, setFeaturedCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeaturedCourses = async () => {
+      try {
+        const res = await API.get('/api/courses');
+        // Safely handle the response and get the first 3 courses
+        const coursesArray = Array.isArray(res.data) ? res.data : (res.data.courses || []);
+        setFeaturedCourses(coursesArray.slice(0, 3));
+      } catch (error) {
+        console.error("Failed to fetch featured courses:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedCourses();
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#F6F7F9]">
-
       {/* ===== HERO SECTION ===== */}
-      <section className="max-w-[1440px] mx-auto px-12 pt-12 pb-10 grid grid-cols-2 gap-16 items-center">   {/* LEFT COLUMN */}
+      <section className="max-w-[1440px] mx-auto px-6 md:px-12 pt-12 pb-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        {/* LEFT COLUMN */}
         <div className="flex flex-col gap-6">
           <div className="w-fit">
             <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-[10px] font-bold text-[#4338CA] bg-[#4338CA]/5 border border-[#4338CA]/20 uppercase tracking-wider">
@@ -86,7 +65,7 @@ export default function HomePage() {
             </span>
           </div>
 
-          <h1 className="text-[56px] leading-[64px] font-extrabold text-[#1D1F23] font-jakarta">
+          <h1 className="text-[40px] md:text-[56px] leading-[1.1] font-extrabold text-[#1D1F23] font-jakarta">
             Learn Without Limits
           </h1>
 
@@ -129,7 +108,7 @@ export default function HomePage() {
         </div>
 
         {/* RIGHT COLUMN (Illustration) */}
-        <div>
+        <div className="hidden lg:block">
           <div className="image-wrapper">
             <div className="image-rectangle"></div>
             <div className="image-container">
@@ -140,7 +119,7 @@ export default function HomePage() {
       </section>
 
       {/* ===== TRUST BANNER ===== */}
-      <section className="max-w-[1440px] mx-auto px-12 pb-20">
+      <section className="max-w-[1440px] mx-auto px-6 md:px-12 pb-20">
         <div className="bg-[#461EA4] rounded-2xl px-8 py-10 shadow-[0_8px_10px_rgba(0,0,0,0.1),0_20px_25px_rgba(0,0,0,0.1)]">
           <p className="text-center text-[12px] font-bold text-white/70 uppercase tracking-[2px] mb-8">
             Trusted by 1,000+ Leading Universities and Companies
@@ -156,7 +135,7 @@ export default function HomePage() {
       </section>
 
       {/* ===== POPULAR CATEGORIES ===== */}
-      <section className="max-w-[1440px] mx-auto px-12 pb-20">
+      <section className="max-w-[1440px] mx-auto px-6 md:px-12 pb-20">
         <div className="text-center mb-10">
           <h2 className="text-[36px] font-extrabold text-[#1D1F23] mb-3">
             Explore Popular Categories
@@ -181,46 +160,83 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== FEATURED COURSES ===== */}
-      <section className="max-w-[1440px] mx-auto px-12 pb-20">
+      {/* ===== FEATURED COURSES (DYNAMIC) ===== */}
+      <section className="py-16 px-6 md:px-12 max-w-[1280px] mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-[32px] font-extrabold text-[#1D1F23]">Featured Courses</h2>
-          <Link to="/courses" className="text-[14px] font-semibold text-[#461EA4] hover:underline">View all →</Link>
+          <h2 className="text-[28px] font-bold text-[#1D1F23]">Featured Courses</h2>
+          <Link to="/courses" className="text-[#461EA4] font-semibold hover:underline flex items-center gap-1">
+            View all <span>→</span>
+          </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {FEATURED_COURSES.map((course, i) => (
-            <Link key={i} to="/course/machine-learning-fundamentals" className="bg-white rounded-xl border border-[#DFE1E4] overflow-hidden hover:shadow-md transition-all group">
-              <div className="relative overflow-hidden">
-                <img src={course.img} alt={course.title} className="w-full h-[170px] object-cover group-hover:scale-105 transition-transform duration-300"/>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"/>
-                <span className="absolute top-3 left-3 bg-[#461EA4] text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-                  {course.category}
-                </span>
-              </div>
-              <div className="p-4">
-                <h3 className="text-[14px] font-semibold text-[#1D1F23] leading-snug mb-3 line-clamp-2">{course.title}</h3>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <StarRating rating={course.rating} />
-                  <span className="text-[12px] text-[#6B7280]">({course.reviews.toLocaleString()})</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[12px] text-[#9CA3AF] mb-3">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-                  {course.duration}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className={`text-[15px] font-bold ${course.isFree ? "text-[#F97316]" : "text-[#1D1F23]"}`}>
-                    {course.price}
-                  </span>
-                  <button type="button" className="h-[32px] px-4 border border-[#461EA4] text-[#461EA4] hover:bg-[#461EA4] hover:text-white text-[12px] font-semibold rounded-full transition-all">
-                    Enroll
-                  </button>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
 
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#461EA4] mx-auto"></div>
+          </div>
+        ) : featuredCourses.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-xl border border-[#DFE1E4] border-dashed">
+            <p className="text-[#595C61] font-medium">No courses available yet. Check back soon!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredCourses.map((course) => (
+              <div
+                key={course._id}
+                className="bg-white rounded-xl border border-[#DFE1E4] overflow-hidden hover:shadow-2xl hover:-translate-y-2 hover:border-[#461EA4]/40 transition-all duration-300 group flex flex-col"
+              >  {/* Course Thumbnail */}
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={course.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=220&fit=crop"}
+                    alt={course.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-3 left-3">
+                    <span className="px-3 py-1 bg-[#461EA4] text-white text-[11px] font-bold uppercase tracking-wider rounded-full">
+                      {course.category || "Programming"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Course Info */}
+                <div className="p-5 flex-1 flex flex-col">
+                  <h3 className="text-[16px] font-bold text-[#1D1F23] mb-2 line-clamp-2 min-h-[48px]">
+                    {course.title}
+                  </h3>
+
+                  {/* Course Meta */}
+                  <div className="flex items-center gap-4 text-xs text-[#595C61] mb-3 mt-auto">
+                    <div className="flex items-center gap-1">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" /><polyline points="12,6 12,12 16,14" />
+                      </svg>
+                      <span>{course.lessons?.length || 0} Lessons</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+                      </svg>
+                      <span>Certificate</span>
+                    </div>
+                  </div>
+
+                  {/* Price and Enroll Button */}
+                  <div className="flex items-center justify-between pt-3 border-t border-[#DFE1E4]">
+                    <span className="text-[18px] font-bold text-[#461EA4]">
+                      {course.price === 0 ? "Free" : `$${course.price}`}
+                    </span>
+                    <Link
+                      to={`/course/${course._id}`}
+                      className="px-4 py-2 border-2 border-[#461EA4] text-[#461EA4] rounded-lg text-[13px] font-semibold hover:bg-[#461EA4] hover:text-white transition-colors"
+                    >
+                      Enroll
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

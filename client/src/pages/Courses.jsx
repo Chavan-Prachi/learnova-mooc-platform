@@ -55,26 +55,26 @@ export default function Courses() {
   };
 
   // Fetch real courses from backend on mount
- // Fetch real courses from backend on mount
-useEffect(() => {
-  const fetchCourses = async () => {
-    try {
-      const res = await API.get('/api/courses');
-      
-      // FILTER OUT the mock "Complete Node.js Bootcamp" courses
-      const filteredCourses = res.data.filter(
-        course => course.title !== "Complete Node.js Bootcamp"
-      );
-      
-      setCourses(filteredCourses);
-    } catch (error) {
-      console.error("Failed to fetch courses:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  fetchCourses();
-}, []);
+  // Fetch real courses from backend on mount
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await API.get('/api/courses');
+
+        // FILTER OUT the mock "Complete Node.js Bootcamp" courses
+        const filteredCourses = res.data.filter(
+          course => course.title !== "Complete Node.js Bootcamp"
+        );
+
+        setCourses(filteredCourses);
+      } catch (error) {
+        console.error("Failed to fetch courses:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F5F5FA]">
@@ -153,7 +153,8 @@ useEffect(() => {
                     <Link
                       key={course._id}
                       to={`/course/${course._id}`}
-                      className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden hover:shadow-md transition-all group"
+
+                      className="bg-white rounded-xl border border-[#DFE1E4] overflow-hidden hover:shadow-2xl hover:-translate-y-2 hover:border-[#461EA4]/40 transition-all duration-300 group flex flex-col"
                     >
                       <div className="relative overflow-hidden">
                         <img
