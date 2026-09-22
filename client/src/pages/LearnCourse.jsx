@@ -3,11 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import API from "../api";
 import { CheckCircle, Circle } from "lucide-react";
 import QuizComponent from "../components/QuizComponent";
+import DiscussionForum from "../components/DiscussionForum";
 
 export default function LearnCourse() {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  
+  const [activeTab, setActiveTab] = useState('lesson');
   const [course, setCourse] = useState(null);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -131,9 +133,9 @@ export default function LearnCourse() {
     return acc;
   }, {}) || {};
 
-  const isGoogleDrive = selectedLesson.fileUrl?.includes('drive.google.com');
-  const viewerUrl = isGoogleDrive ? getViewerUrl(selectedLesson.fileUrl) : selectedLesson.fileUrl;
-  const videoEmbedUrl = selectedLesson.type === 'video' ? getVideoEmbedUrl(selectedLesson.videoUrl) : "";
+  const isGoogleDrive = selectedLesson?.fileUrl?.includes('drive.google.com');
+  const viewerUrl = isGoogleDrive ? getViewerUrl(selectedLesson.fileUrl) : selectedLesson?.fileUrl;
+  const videoEmbedUrl = selectedLesson?.type === 'video' ? getVideoEmbedUrl(selectedLesson.videoUrl) : "";
 
   const isCurrentLessonCompleted = selectedLesson?._id && completedLessons.has(selectedLesson._id);
   const totalLessons = course.lessons?.length || 0;
@@ -153,7 +155,6 @@ export default function LearnCourse() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          {/* Progress indicator in header */}
           <div className="hidden md:flex items-center gap-2 text-xs">
             <span className="text-gray-400">Progress:</span>
             <span className="font-bold text-green-400">{completedCount}/{totalLessons}</span>
@@ -213,10 +214,11 @@ export default function LearnCourse() {
                         <button
                           key={lesson._id}
                           onClick={() => { setSelectedLesson(lesson); setSidebarOpen(false); setViewerError(false); }}
-                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${isSelected
-                            ? "bg-[#461EA4] text-white shadow-md"
-                            : "hover:bg-[#F6F7F9] text-[#374151]"
-                            }`}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
+                            isSelected
+                              ? "bg-[#461EA4] text-white shadow-md"
+                              : "hover:bg-[#F6F7F9] text-[#374151]"
+                          }`}
                         >
                           <div className={`shrink-0 ${isSelected ? "text-white" : isCompleted ? "text-green-500" : "text-[#9CA3AF]"}`}>
                             {isCompleted ? (
@@ -243,171 +245,198 @@ export default function LearnCourse() {
           </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-[#F6F7F9] p-4 md:p-8">
-          {selectedLesson ? (
-            <div className="max-w-5xl mx-auto pb-10">
-              <div className="mb-6 flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-[#1D1F23] mb-2">{selectedLesson.title}</h2>
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#461EA4]/10 text-[#461EA4] text-xs font-bold rounded-full capitalize">
-                      {getLessonIcon(selectedLesson.type)} {selectedLesson.type}
-                    </span>
-                    <span className="text-sm text-[#9CA3AF]">{selectedLesson.module || "Day 1"}</span>
-                  </div>
-                </div>
-                {(selectedLesson.type === 'ebook' || selectedLesson.type === 'notes' || selectedLesson.type === 'ppt') && selectedLesson.fileUrl && (
-                  <a href={selectedLesson.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#DFE1E4] text-[#461EA4] font-semibold rounded-lg hover:bg-gray-50 transition-colors shrink-0">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15,3 21,3 21,9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-                    <span className="hidden md:inline">Open</span>
-                  </a>
-                )}
-              </div>
+        {/* Right Side: Tabs + Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Tab Navigation */}
+          <div className="bg-white border-b border-[#DFE1E4] px-4 md:px-8 flex gap-6 shrink-0">
+            <button
+              onClick={() => setActiveTab('lesson')}
+              className={`py-4 text-sm font-semibold border-b-2 transition-colors ${
+                activeTab === 'lesson' ? 'border-[#461EA4] text-[#461EA4]' : 'border-transparent text-[#595C61] hover:text-[#1D1F23]'
+              }`}
+            >
+              Lesson Content
+            </button>
+            <button
+              onClick={() => setActiveTab('discussion')}
+              className={`py-4 text-sm font-semibold border-b-2 transition-colors ${
+                activeTab === 'discussion' ? 'border-[#461EA4] text-[#461EA4]' : 'border-transparent text-[#595C61] hover:text-[#1D1F23]'
+              }`}
+            >
+              Discussion Forum
+            </button>
+          </div>
 
-                            {/* Mark as Complete Button (HIDDEN for Quizzes) */}
-              {selectedLesson.type !== 'quiz' && (
-                <div className="mb-6">
-                  <button
-                    onClick={() => toggleLessonCompletion(selectedLesson._id)}
-                    className={`w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-                      isCurrentLessonCompleted
-                        ? "bg-green-500 hover:bg-green-600 text-white"
-                        : "bg-white hover:bg-gray-50 text-[#1D1F23] border-2 border-[#DFE1E4]"
-                    }`}
-                  >
-                    {isCurrentLessonCompleted ? (
-                      <>
-                        <CheckCircle className="w-5 h-5" />
-                        <span>Completed</span>
-                      </>
-                    ) : (
-                      <>
-                        <Circle className="w-5 h-5" />
-                        <span>Mark as Complete</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-
-              <div className="bg-white rounded-xl border border-[#DFE1E4] shadow-sm overflow-hidden">
-                {/* VIDEO */}
-                {selectedLesson.type === 'video' && videoEmbedUrl ? (
-                  <div className="aspect-video bg-black w-full">
-                    <iframe
-                      src={videoEmbedUrl}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      title={selectedLesson.title}
-                    />
-                  </div>
-                ) : selectedLesson.type === 'video' ? (
-                  <div className="aspect-video bg-black flex items-center justify-center text-white">
-                    <div className="text-center">
-                      <p className="font-semibold">No video URL provided</p>
-                      <p className="text-sm text-gray-400 mt-1">Please add a YouTube link in the instructor dashboard.</p>
-                    </div>
-                  </div>
-                ) : null}
-
-                {/* PDF/PPT/NOTES VIEWER */}
-                {(selectedLesson.type === 'ebook' || selectedLesson.type === 'notes' || selectedLesson.type === 'ppt') && selectedLesson.fileUrl && (
-                  viewerError ? (
-                    <div className="p-16 text-center">
-                      <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg className="w-10 h-10 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="15" y1="9" x2="9" y2="15" />
-                          <line x1="9" y1="9" x2="15" y2="15" />
-                        </svg>
+          {/* Main Content Area */}
+          <main className="flex-1 overflow-y-auto bg-[#F6F7F9]">
+            {activeTab === 'lesson' ? (
+              selectedLesson ? (
+                <div className="max-w-5xl mx-auto p-4 md:p-8 pb-10">
+                  <div className="mb-6 flex items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-2xl md:text-3xl font-bold text-[#1D1F23] mb-2">{selectedLesson.title}</h2>
+                      <div className="flex items-center gap-3">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#461EA4]/10 text-[#461EA4] text-xs font-bold rounded-full capitalize">
+                          {getLessonIcon(selectedLesson.type)} {selectedLesson.type}
+                        </span>
+                        <span className="text-sm text-[#9CA3AF]">{selectedLesson.module || "Day 1"}</span>
                       </div>
-                      <h3 className="text-xl font-bold text-[#1D1F23] mb-2">Unable to display document</h3>
-                      <p className="text-gray-600 mb-6">Please open the file in a new tab to view it.</p>
-                      <a href={selectedLesson.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 bg-[#461EA4] text-white font-semibold rounded-lg hover:bg-[#3a188a] transition-colors">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15,3 21,3 21,9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-                        Open in New Tab
+                    </div>
+                    {(selectedLesson.type === 'ebook' || selectedLesson.type === 'notes' || selectedLesson.type === 'ppt') && selectedLesson.fileUrl && (
+                      <a href={selectedLesson.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#DFE1E4] text-[#461EA4] font-semibold rounded-lg hover:bg-gray-50 transition-colors shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15,3 21,3 21,9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                        <span className="hidden md:inline">Open</span>
                       </a>
-                      <button onClick={() => setViewerError(false)} className="block mt-4 mx-auto text-sm text-gray-500 hover:text-gray-700 underline">Try loading again</button>
-                    </div>
-                  ) : (
-                    <div className="relative bg-white rounded-xl border border-[#DFE1E4] shadow-sm overflow-hidden" style={{ minHeight: '75vh' }}>
-                      <iframe
-                        src={viewerUrl}
-                        className="w-full border-0 bg-white"
-                        style={{ height: '80vh', minHeight: '600px' }}
-                        title={selectedLesson.title}
-                        onError={() => setViewerError(true)}
-                      />
-                    </div>
-                  )
-                )}
+                    )}
+                  </div>
 
-                {/* QUIZ / ASSESSMENT */}
-                {selectedLesson.type === 'quiz' && (
-                  <div className="p-6 md:p-8">
-                    <div className="max-w-3xl mx-auto">
-                      {!selectedLesson.quizData || !selectedLesson.quizData.questions || selectedLesson.quizData.questions.length === 0 ? (
-                        /* No Quiz Questions Yet */
-                        <div className="bg-white rounded-xl border border-[#DFE1E4] p-16 text-center">
-                          <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <svg className="w-10 h-10 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  {/* Mark as Complete Button (HIDDEN for Quizzes) */}
+                  {selectedLesson.type !== 'quiz' && (
+                    <div className="mb-6">
+                      <button
+                        onClick={() => toggleLessonCompletion(selectedLesson._id)}
+                        className={`w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                          isCurrentLessonCompleted
+                            ? "bg-green-500 hover:bg-green-600 text-white"
+                            : "bg-white hover:bg-gray-50 text-[#1D1F23] border-2 border-[#DFE1E4]"
+                        }`}
+                      >
+                        {isCurrentLessonCompleted ? (
+                          <>
+                            <CheckCircle className="w-5 h-5" />
+                            <span>Completed</span>
+                          </>
+                        ) : (
+                          <>
+                            <Circle className="w-5 h-5" />
+                            <span>Mark as Complete</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="bg-white rounded-xl border border-[#DFE1E4] shadow-sm overflow-hidden">
+                    {/* VIDEO */}
+                    {selectedLesson.type === 'video' && videoEmbedUrl ? (
+                      <div className="aspect-video bg-black w-full">
+                        <iframe
+                          src={videoEmbedUrl}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          title={selectedLesson.title}
+                        />
+                      </div>
+                    ) : selectedLesson.type === 'video' ? (
+                      <div className="aspect-video bg-black flex items-center justify-center text-white">
+                        <div className="text-center">
+                          <p className="font-semibold">No video URL provided</p>
+                          <p className="text-sm text-gray-400 mt-1">Please add a YouTube link in the instructor dashboard.</p>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* PDF/PPT/NOTES VIEWER */}
+                    {(selectedLesson.type === 'ebook' || selectedLesson.type === 'notes' || selectedLesson.type === 'ppt') && selectedLesson.fileUrl && (
+                      viewerError ? (
+                        <div className="p-16 text-center">
+                          <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg className="w-10 h-10 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <circle cx="12" cy="12" r="10" />
-                              <line x1="12" y1="8" x2="12" y2="12" />
-                              <line x1="12" y1="16" x2="12.01" y2="16" />
+                              <line x1="15" y1="9" x2="9" y2="15" />
+                              <line x1="9" y1="9" x2="15" y2="15" />
                             </svg>
                           </div>
-                          <h3 className="text-2xl font-bold text-[#1D1F23] mb-2">Quiz Not Ready Yet</h3>
-                          <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                            The instructor hasn't added questions to this quiz yet. Please check back later or contact your instructor.
-                          </p>
-                          <button
-                            onClick={() => navigate("/my-courses")}
-                            className="px-6 py-3 bg-[#461EA4] text-white font-semibold rounded-lg hover:bg-[#3a188a] transition-colors"
-                          >
-                            Back to My Courses
-                          </button>
+                          <h3 className="text-xl font-bold text-[#1D1F23] mb-2">Unable to display document</h3>
+                          <p className="text-gray-600 mb-6">Please open the file in a new tab to view it.</p>
+                          <a href={selectedLesson.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 bg-[#461EA4] text-white font-semibold rounded-lg hover:bg-[#3a188a] transition-colors">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15,3 21,3 21,9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                            Open in New Tab
+                          </a>
+                          <button onClick={() => setViewerError(false)} className="block mt-4 mx-auto text-sm text-gray-500 hover:text-gray-700 underline">Try loading again</button>
                         </div>
                       ) : (
-                        /* Quiz Component with Questions */
-                        <QuizComponent quizData={selectedLesson.quizData} onComplete={() => toggleLessonCompletion(selectedLesson._id)} />
-                      )}
-                    </div>
-                  </div>
-                )}
+                        <div className="relative bg-white rounded-xl border border-[#DFE1E4] shadow-sm overflow-hidden" style={{ minHeight: '75vh' }}>
+                          <iframe
+                            src={viewerUrl}
+                            className="w-full border-0 bg-white"
+                            style={{ height: '80vh', minHeight: '600px' }}
+                            title={selectedLesson.title}
+                            onError={() => setViewerError(true)}
+                          />
+                        </div>
+                      )
+                    )}
 
-                {/* LAB */}
-                {selectedLesson.type === 'lab' && (
-                  <div className="p-16 text-center">
-                    <div className="w-24 h-24 bg-[#461EA4]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <svg className="w-12 h-12 text-[#461EA4]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M10 2v7.31" />
-                        <path d="M14 2v7.31" />
-                        <path d="M8.5 2h7" />
-                        <path d="M14 9.3a6.5 6.5 0 1 1-4 0" />
-                      </svg>
+                    {/* QUIZ / ASSESSMENT */}
+                    {selectedLesson.type === 'quiz' && (
+                      <div className="p-6 md:p-8">
+                        <div className="max-w-3xl mx-auto">
+                          {!selectedLesson.quizData || !selectedLesson.quizData.questions || selectedLesson.quizData.questions.length === 0 ? (
+                            <div className="bg-white rounded-xl border border-[#DFE1E4] p-16 text-center">
+                              <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <svg className="w-10 h-10 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="12" cy="12" r="10" />
+                                  <line x1="12" y1="8" x2="12" y2="12" />
+                                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                              </div>
+                              <h3 className="text-2xl font-bold text-[#1D1F23] mb-2">Quiz Not Ready Yet</h3>
+                              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                                The instructor hasn't added questions to this quiz yet. Please check back later or contact your instructor.
+                              </p>
+                              <button
+                                onClick={() => navigate("/my-courses")}
+                                className="px-6 py-3 bg-[#461EA4] text-white font-semibold rounded-lg hover:bg-[#3a188a] transition-colors"
+                              >
+                                Back to My Courses
+                              </button>
+                            </div>
+                          ) : (
+                            <QuizComponent quizData={selectedLesson.quizData} onComplete={() => toggleLessonCompletion(selectedLesson._id)} />
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* LAB */}
+                    {selectedLesson.type === 'lab' && (
+                      <div className="p-16 text-center">
+                        <div className="w-24 h-24 bg-[#461EA4]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                          <svg className="w-12 h-12 text-[#461EA4]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M10 2v7.31" />
+                            <path d="M14 2v7.31" />
+                            <path d="M8.5 2h7" />
+                            <path d="M14 9.3a6.5 6.5 0 1 1-4 0" />
+                          </svg>
+                        </div>
+                        <h3 className="text-2xl font-bold text-[#1D1F23] mb-2">Virtual Lab Coming Soon</h3>
+                        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                          This interactive lab environment is being set up. You'll be able to practice hands-on skills here soon!
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedLesson.content && (
+                    <div className="mt-8 bg-white rounded-xl p-6 border border-[#DFE1E4] shadow-sm">
+                      <h4 className="text-sm font-bold text-[#1D1F23] mb-3 uppercase tracking-wider">About this lesson</h4>
+                      <p className="text-[14px] text-[#374151] whitespace-pre-line leading-relaxed">{selectedLesson.content}</p>
                     </div>
-                    <h3 className="text-2xl font-bold text-[#1D1F23] mb-2">Virtual Lab Coming Soon</h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      This interactive lab environment is being set up. You'll be able to practice hands-on skills here soon!
-                    </p>
-                  </div>
-                )}
-                {selectedLesson.content && (
-                  <div className="mt-8 bg-white rounded-xl p-6 border border-[#DFE1E4] shadow-sm">
-                    <h4 className="text-sm font-bold text-[#1D1F23] mb-3 uppercase tracking-wider">About this lesson</h4>
-                    <p className="text-[14px] text-[#374151] whitespace-pre-line leading-relaxed">{selectedLesson.content}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full text-[#595C61]">
-              <p>Select a lesson to begin</p>
-            </div>
-          )}
-        </main>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-[#595C61]">
+                  <p>Select a lesson to begin</p>
+                </div>
+              )
+            ) : (
+              /* Discussion Forum Tab */
+              <DiscussionForum courseId={id} />
+            )}
+          </main>
+        </div>
       </div>
     </div>
   );
