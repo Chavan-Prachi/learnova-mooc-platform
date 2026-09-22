@@ -4,12 +4,13 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import InstructorCourseManager from "./pages/InstructorCourseManager";
-
+import FloatingChatbot from "./components/FloatingChatbot";
 // Pages
 import HomePage from "./pages/HomePage";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import Resources from "./pages/Resources";
+import ResourceCategory from "./pages/ResourceCategory";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import InstructorDashboard from "./pages/InstructorDashboard";
@@ -35,6 +36,7 @@ function AppRoutes() {
       {/* 2. ADDED THIS ROUTE FOR THE STUDENT LEARNING PLAYER */}
       <Route path="/learn/:id" element={<PageWrapper title="Learning"><LearnCourse /></PageWrapper>} />   
       <Route path="/resources" element={<PageWrapper title="Resources"><Resources /></PageWrapper>} />
+      <Route path="/resources/:type" element={<PageWrapper title="Resource Category"><ResourceCategory /></PageWrapper>} />
       <Route path="/login" element={<PageWrapper title="Login"><Login /></PageWrapper>} />
       <Route path="/register" element={<PageWrapper title="Register"><Register /></PageWrapper>} />
       <Route path="/instructor" element={<PageWrapper title="Instructor Dashboard"><InstructorDashboard /></PageWrapper>} />
@@ -53,6 +55,7 @@ function App() {
         <Navbar />
         <main className="flex-1">
           <AppRoutes />
+          <FloatingChatbot />
         </main>
         <Footer />
       </div>

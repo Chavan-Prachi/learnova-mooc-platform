@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import API from "../api";
 import { ArrowLeft, Plus, Trash2, Edit, Video, FileText, HelpCircle, FlaskConical, Presentation, File, BookOpen, DollarSign } from "lucide-react";
+
 export default function InstructorCourseManager() {
     const { courseId } = useParams();
     const navigate = useNavigate();
@@ -13,8 +14,33 @@ export default function InstructorCourseManager() {
     const [editingLessonId, setEditingLessonId] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [openModules, setOpenModules] = useState({});
+    const [showTypeDropdown, setShowTypeDropdown] = useState(false);
 
     const toggleModule = (module) => setOpenModules(prev => ({ ...prev, [module]: !prev[module] }));
+
+    const getLessonTypeIcon = (type) => {
+        const icons = {
+            video: <Video className="w-5 h-5 text-[#461EA4]" />,
+            ebook: <FileText className="w-5 h-5 text-[#461EA4]" />,
+            ppt: <Presentation className="w-5 h-5 text-[#461EA4]" />,
+            notes: <File className="w-5 h-5 text-[#461EA4]" />,
+            quiz: <HelpCircle className="w-5 h-5 text-[#461EA4]" />,
+            lab: <FlaskConical className="w-5 h-5 text-[#461EA4]" />
+        };
+        return icons[type] || <File className="w-5 h-5 text-[#461EA4]" />;
+    };
+
+    const getLessonTypeLabel = (type) => {
+        const labels = {
+            video: 'Video Lecture',
+            ebook: 'E-Book / PDF',
+            ppt: 'Lecture PPT',
+            notes: 'Revision Notes',
+            quiz: 'Quiz / Assessment',
+            lab: 'Virtual Lab'
+        };
+        return labels[type] || 'Select Type';
+    };
 
     const [lessonData, setLessonData] = useState({
         title: "",
@@ -49,7 +75,6 @@ export default function InstructorCourseManager() {
     const handleAddLesson = async (e) => {
         e.preventDefault();
 
-        // ✅ FIX: Include quizData and labConfig in the payload so they actually save!
         const lessonPayload = {
             title: lessonData.title,
             module: lessonData.module,
@@ -113,9 +138,9 @@ export default function InstructorCourseManager() {
         });
         setShowLessonForm(false);
         setEditingLessonId(null);
+        setShowTypeDropdown(false);
     };
 
-    // ✅ FIX: Added missing addQuizQuestion function
     const addQuizQuestion = () => {
         setLessonData({
             ...lessonData,
@@ -129,7 +154,6 @@ export default function InstructorCourseManager() {
         });
     };
 
-    // ✅ FIX: Added missing updateQuizQuestion function
     const updateQuizQuestion = (index, field, value) => {
         const updated = [...lessonData.quizData.questions];
         updated[index][field] = value;
@@ -179,40 +203,40 @@ export default function InstructorCourseManager() {
                 </div>
 
                 {/* Course Header - Clean & Professional */}
-<div className="bg-gradient-to-br from-[#461EA4] to-[#5533CC] rounded-xl p-8 mb-6 text-white">
-    <div className="flex flex-col md:flex-row gap-6 items-start">
-        <img
-            src={course.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&h=200&fit=crop"}
-            alt={course.title}
-            className="w-full md:w-64 h-40 object-cover rounded-lg shadow-lg border-2 border-white/20"
-        />
-        <div className="flex-1">
-            <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold mb-3">
-                {course.category}
-            </span>
-            <h1 className="text-2xl md:text-3xl font-bold mb-4 leading-tight">{course.title}</h1>
-            
-            <div className="flex flex-wrap items-center gap-4 text-sm text-white/90">
-                <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    <span>{course.lessons?.length || 0} Lessons</span>
+                <div className="bg-gradient-to-br from-[#461EA4] to-[#5533CC] rounded-xl p-8 mb-6 text-white">
+                    <div className="flex flex-col md:flex-row gap-6 items-start">
+                        <img
+                            src={course.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&h=200&fit=crop"}
+                            alt={course.title}
+                            className="w-full md:w-64 h-40 object-cover rounded-lg shadow-lg border-2 border-white/20"
+                        />
+                        <div className="flex-1">
+                            <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold mb-3">
+                                {course.category}
+                            </span>
+                            <h1 className="text-2xl md:text-3xl font-bold mb-4 leading-tight">{course.title}</h1>
+                            
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-white/90">
+                                <div className="flex items-center gap-2">
+                                    <BookOpen className="w-4 h-4" />
+                                    <span>{course.lessons?.length || 0} Lessons</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <DollarSign className="w-4 h-4" />
+                                    <span>{course.price === 0 ? "Free" : `$${course.price}`}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4" />
-                    <span>{course.price === 0 ? "Free" : `$${course.price}`}</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-{/* About this course Card - Matches Student View */}
-<div className="bg-white rounded-xl border border-[#E5E7EB] p-6 mb-8 shadow-sm">
-    <h2 className="text-xl font-bold text-[#111827] mb-4">About this course</h2>
-    <div className="text-sm text-[#374151] leading-relaxed whitespace-pre-line">
-        {course.description || "No description provided yet."}
-    </div>
-</div>
+                {/* About this course Card */}
+                <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 mb-8 shadow-sm">
+                    <h2 className="text-xl font-bold text-[#111827] mb-4">About this course</h2>
+                    <div className="text-sm text-[#374151] leading-relaxed whitespace-pre-line">
+                        {course.description || "No description provided yet."}
+                    </div>
+                </div>
 
                 {/* Clean Accordion Curriculum UI */}
                 <div className="bg-white rounded-xl border border-[#DFE1E4] p-6">
@@ -237,7 +261,6 @@ export default function InstructorCourseManager() {
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {/* Group lessons by module */}
                             {Object.entries(
                                 course.lessons.reduce((acc, lesson) => {
                                     const module = lesson.module || "Day 1";
@@ -247,7 +270,6 @@ export default function InstructorCourseManager() {
                                 }, {})
                             ).map(([module, lessons]) => (
                                 <div key={module} className="border border-[#DFE1E4] rounded-lg bg-white overflow-hidden">
-                                    {/* Module Header (Clickable) */}
                                     <button
                                         onClick={() => toggleModule(module)}
                                         className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#F6F7F9] transition-colors text-left"
@@ -261,7 +283,6 @@ export default function InstructorCourseManager() {
                                         </svg>
                                     </button>
 
-                                    {/* Expanded Lessons List */}
                                     {openModules[module] && (
                                         <div className="px-4 pb-4 space-y-2 border-t border-[#DFE1E4] pt-3 bg-[#FAFAFA]">
                                             {lessons.map((lesson) => (
@@ -311,14 +332,51 @@ export default function InstructorCourseManager() {
                                     <option value="Day 5">Day 5</option>
                                 </select>
 
-                                <select value={lessonData.type} onChange={e => setLessonData({ ...lessonData, type: e.target.value })} className="h-12 px-4 bg-[#F6F7F9] border border-[#DFE1E4] rounded-[12px] outline-none focus:border-[#461EA4]">
-                                    <option value="video">🎥 Video Lecture</option>
-                                    <option value="ebook">📚 E-Book / PDF</option>
-                                    <option value="ppt">📊 Lecture PPT</option>
-                                    <option value="notes">📝 Revision Notes</option>
-                                    <option value="quiz">❓ Quiz / Assessment</option>
-                                    <option value="lab">🔬 Virtual Lab</option>
-                                </select>
+                                {/* Custom Lesson Type Selector with Lucide Icons */}
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+                                        className="w-full h-12 px-4 bg-[#F6F7F9] border border-[#DFE1E4] rounded-[12px] outline-none focus:border-[#461EA4] flex items-center justify-between text-left"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            {getLessonTypeIcon(lessonData.type)}
+                                            <span className="text-[14px] text-[#1D1F23]">{getLessonTypeLabel(lessonData.type)}</span>
+                                        </div>
+                                        <svg className={`w-5 h-5 text-[#9CA3AF] transition-transform ${showTypeDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <polyline points="6,9 12,15 18,9" strokeWidth="2" />
+                                        </svg>
+                                    </button>
+
+                                    {showTypeDropdown && (
+                                        <div className="absolute z-50 w-full mt-2 bg-white border border-[#DFE1E4] rounded-[12px] shadow-lg overflow-hidden">
+                                            <button type="button" onClick={() => { setLessonData({ ...lessonData, type: 'video' }); setShowTypeDropdown(false); }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[#F6F7F9] transition-colors text-left">
+                                                <Video className="w-5 h-5 text-[#461EA4]" />
+                                                <span className="text-[14px] font-medium text-[#1D1F23]">Video Lecture</span>
+                                            </button>
+                                            <button type="button" onClick={() => { setLessonData({ ...lessonData, type: 'ebook' }); setShowTypeDropdown(false); }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[#F6F7F9] transition-colors text-left">
+                                                <FileText className="w-5 h-5 text-[#461EA4]" />
+                                                <span className="text-[14px] font-medium text-[#1D1F23]">E-Book / PDF</span>
+                                            </button>
+                                            <button type="button" onClick={() => { setLessonData({ ...lessonData, type: 'ppt' }); setShowTypeDropdown(false); }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[#F6F7F9] transition-colors text-left">
+                                                <Presentation className="w-5 h-5 text-[#461EA4]" />
+                                                <span className="text-[14px] font-medium text-[#1D1F23]">Lecture PPT</span>
+                                            </button>
+                                            <button type="button" onClick={() => { setLessonData({ ...lessonData, type: 'notes' }); setShowTypeDropdown(false); }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[#F6F7F9] transition-colors text-left">
+                                                <File className="w-5 h-5 text-[#461EA4]" />
+                                                <span className="text-[14px] font-medium text-[#1D1F23]">Revision Notes</span>
+                                            </button>
+                                            <button type="button" onClick={() => { setLessonData({ ...lessonData, type: 'quiz' }); setShowTypeDropdown(false); }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[#F6F7F9] transition-colors text-left">
+                                                <HelpCircle className="w-5 h-5 text-[#461EA4]" />
+                                                <span className="text-[14px] font-medium text-[#1D1F23]">Quiz / Assessment</span>
+                                            </button>
+                                            <button type="button" onClick={() => { setLessonData({ ...lessonData, type: 'lab' }); setShowTypeDropdown(false); }} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[#F6F7F9] transition-colors text-left">
+                                                <FlaskConical className="w-5 h-5 text-[#461EA4]" />
+                                                <span className="text-[14px] font-medium text-[#1D1F23]">Virtual Lab</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
 
                                 {lessonData.type === 'video' && (
                                     <>

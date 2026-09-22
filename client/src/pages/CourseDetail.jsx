@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import API from "../api";
-import { Clock, Award, BookOpen, CheckCircle, PlayCircle } from "lucide-react";
+import { Clock, Award, BookOpen, CheckCircle, PlayCircle, Video, Presentation, HelpCircle, FlaskConical, FileText } from "lucide-react";
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -171,13 +171,14 @@ export default function CourseDetail() {
                             .filter(lesson => (lesson.module || "Day 1") === module)
                             .map((lesson, j) => (
                               <div key={lesson._id || j} className="flex items-center gap-3 px-5 py-3 border-t border-[#F3F4F6]">
-                                <span className="text-[#9CA3AF] shrink-0">
-                                  {lesson.type === 'video' && '🎥'}
-                                  {lesson.type === 'ppt' && '📊'}
-                                  {lesson.type === 'ebook' && '📚'}
-                                  {lesson.type === 'quiz' && '❓'}
-                                  {lesson.type === 'lab' && '🔬'}
-                                  {lesson.type === 'notes' && '📝'}
+                                {/* ✅ Lucide Icons replacing emojis */}
+                                <span className="text-[#461EA4] shrink-0">
+                                  {lesson.type === 'video' && <Video className="w-4 h-4" />}
+                                  {lesson.type === 'ppt' && <Presentation className="w-4 h-4" />}
+                                  {lesson.type === 'ebook' && <BookOpen className="w-4 h-4" />}
+                                  {lesson.type === 'quiz' && <HelpCircle className="w-4 h-4" />}
+                                  {lesson.type === 'lab' && <FlaskConical className="w-4 h-4" />}
+                                  {lesson.type === 'notes' && <FileText className="w-4 h-4" />}
                                 </span>
                                 <span className="flex-1 text-[13px] text-[#374151] font-medium">{lesson.title}</span>
                                 <span className="text-[11px] text-[#6B7280] shrink-0 capitalize bg-gray-200 px-2 py-0.5 rounded-full">{lesson.type}</span>

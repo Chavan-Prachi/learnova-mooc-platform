@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const discussionRoutes = require('./routes/discussionRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -21,6 +22,7 @@ app.use('/api/courses', require('./routes/courseRoutes'));
 app.use('/api/enrollments', require('./routes/enrollmentRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/discussions', discussionRoutes);
+app.use('/api/chat', chatRoutes);
 // Basic Test Route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Learnova MOOC Platform API! 🚀' });

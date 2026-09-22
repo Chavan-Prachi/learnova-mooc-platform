@@ -1,228 +1,257 @@
+import { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import API from "../api";
+import { 
+  Presentation, 
+  Video, 
+  BookOpen, 
+  FileText, 
+  ChevronRight,
+  MessageSquare,
+  Mail,
+  Phone,
+  HelpCircle
+} from "lucide-react";
 
 const RESOURCE_TYPES = [
   {
-    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+    type: 'ppt',
+    icon: <Presentation className="w-5 h-5 text-white" />,
     iconBg: "#461EA4",
-    count: "124 Resources",
     title: "PPT Presentations",
-    desc: "Visual lecture slides, charts, and diagrams used during classroom",
+    desc: "Visual lecture slides, charts, and diagrams used during classroom sessions.",
     tags: ["SLIDES", "VISUALS", "CHARTS"],
     img: "https://images.unsplash.com/photo-1627037558426-c2d07beda3af?w=400&h=200&fit=crop&auto=format",
   },
   {
-    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23,7 16,12 23,17"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>,
+    type: 'video',
+    icon: <Video className="w-5 h-5 text-white" />,
     iconBg: "#EA580C",
-    count: "86 Resources",
     title: "Video Lectures",
-    desc: "High-definition recordings of live sessions and exclusive",
+    desc: "High-definition recordings of live sessions and exclusive masterclasses.",
     tags: ["RECORDED", "4K HD", "MODULES"],
     img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=200&fit=crop&auto=format",
   },
   {
-    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,
+    type: 'ebook',
+    icon: <BookOpen className="w-5 h-5 text-white" />,
     iconBg: "#7C3AED",
-    count: "42 Resources",
     title: "Ebooks & PDFs",
-    desc: "Comprehensive textbooks, digital journals, and detailed research",
+    desc: "Comprehensive textbooks, digital journals, and detailed research papers.",
     tags: ["DIGITAL", "READING", "LIBRARY"],
     img: "https://images.unsplash.com/photo-1610116306796-6fea9f4fae38?w=400&h=200&fit=crop&auto=format",
   },
   {
-    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>,
+    type: 'notes',
+    icon: <FileText className="w-5 h-5 text-white" />,
     iconBg: "#6B7280",
-    count: "215 Resources",
     title: "Revision Notes",
-    desc: "Summarized key takeaways, flashcards, and exam preparation",
+    desc: "Summarized key takeaways, flashcards, and exam preparation materials.",
     tags: ["SUMMARY", "EXAMS", "STUDY"],
     img: "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400&h=200&fit=crop&auto=format",
   },
 ];
 
-const QUICK_TOOLS = [
-  {
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,
-    title: "Student Handbook",
-    desc: "Official guidelines & code of conduct",
-  },
-  {
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>,
-    title: "Curriculum Roadmap",
-    desc: "Visual guide to your degree progress",
-  },
-  {
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>,
-    title: "Research Portal",
-    desc: "Access to IEEE, JSTOR & more",
-  },
-];
-
 export default function Resources() {
+  const { user } = useContext(AuthContext);
+  const [resourceCounts, setResourceCounts] = useState({
+    ppt: 0,
+    video: 0,
+    ebook: 0,
+    notes: 0
+  });
+
+  useEffect(() => {
+    fetchResourceCounts();
+  }, []);
+
+  const fetchResourceCounts = async () => {
+    try {
+      const enrollRes = await API.get('/api/enrollments/my-courses');
+      const enrolled = enrollRes.data;
+      
+      const counts = { ppt: 0, video: 0, ebook: 0, notes: 0 };
+      
+      for (const enrollment of enrolled) {
+        const courseId = enrollment.course?._id || enrollment.course;
+        if (!courseId) continue;
+
+        try {
+          const courseRes = await API.get(`/api/courses/${courseId}`);
+          const course = courseRes.data;
+
+          if (!course.lessons) continue;
+
+          course.lessons.forEach(lesson => {
+            if (lesson.type === 'ppt' && lesson.fileUrl) counts.ppt++;
+            else if (lesson.type === 'video' && lesson.videoUrl) counts.video++;
+            else if (lesson.type === 'ebook' && lesson.fileUrl) counts.ebook++;
+            else if (lesson.type === 'notes' && lesson.fileUrl) counts.notes++;
+          });
+        } catch (err) {
+          console.error(`Failed to fetch course ${courseId}:`, err);
+        }
+      }
+      
+      setResourceCounts(counts);
+    } catch (error) {
+      console.error("Failed to fetch resource counts:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F6F7F9]">
-      <div className="max-w-[1280px] mx-auto px-6 py-6">
+      <div className="max-w-[1280px] mx-auto px-6 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-[13px] text-[#6B7280] mb-4">
-          <Link to="/" className="hover:text-[#461EA4] transition-colors">Home</Link>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
-          <span className="text-[#595C61] font-medium">Resources Hub</span>
+        <nav className="flex items-center gap-2 text-[13px] text-[#6B7280] mb-6">
+          <Link to="/" className="hover:text-[#461EA4] transition-colors flex items-center gap-1">
+            Home
+          </Link>
+          <ChevronRight className="w-4 h-4" />
+          <span className="text-[#1D1F23] font-semibold">Resources Hub</span>
         </nav>
 
-        {/* Page header */}
-        <div className="flex items-start justify-between flex-wrap gap-4 mb-8">
-          <div>
-            <div className="inline-flex items-center border border-[#595C61]/30 rounded-full px-3 py-1 mb-3">
-              <span className="text-[10px] font-semibold text-[#595C61] uppercase tracking-wider">Learner Support</span>
-            </div>
-            <h1 className="text-[30px] font-bold text-[#1D1F23] mb-2">Course Resources Hub</h1>
-            <p className="text-[14px] text-[#6B7280] leading-relaxed max-w-[460px]">
-              Access a comprehensive library of educational materials designed to support your learning journey. From interactive presentations to deep-dive ebooks.
-            </p>
+        {/* Page Header */}
+        <div className="mb-12">
+          <div className="inline-flex items-center border border-[#461EA4]/30 bg-[#461EA4]/5 rounded-full px-3 py-1 mb-4">
+            <span className="text-[10px] font-bold text-[#461EA4] uppercase tracking-wider">Learner Support</span>
           </div>
-          <div className="flex items-center gap-3 pt-6">
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              <input
-                type="text"
-                placeholder="Search resources..."
-                className="h-[38px] pl-9 pr-4 w-[220px] rounded-lg border border-[#E5E7EB] bg-white text-[13px] text-[#595C61] placeholder-[#9CA3AF] focus:outline-none focus:border-[#461EA4] transition-all"
-              />
-            </div>
-            <button type="button" className="h-[38px] px-4 border border-[#E5E7EB] bg-white rounded-lg text-[13px] text-[#595C61] hover:border-[#461EA4] hover:text-[#461EA4] flex items-center gap-2 transition-all">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Bulk Download
-            </button>
-          </div>
+          <h1 className="text-[36px] font-bold text-[#1D1F23] mb-3">Course Resources Hub</h1>
+          <p className="text-[16px] text-[#595C61] leading-relaxed max-w-[600px]">
+            Access a comprehensive library of educational materials designed to support your learning journey. From interactive presentations to deep-dive ebooks.
+          </p>
         </div>
 
         {/* Core Learning Quadrants */}
-        <div className="mb-10">
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-1 h-5 bg-[#461EA4] rounded-full"/>
-            <h2 className="text-[18px] font-bold text-[#1D1F23]">Core Learning Quadrants</h2>
+        <div className="mb-16">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-1.5 h-6 bg-[#461EA4] rounded-full"/>
+            <h2 className="text-[22px] font-bold text-[#1D1F23]">Core Learning Quadrants</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {RESOURCE_TYPES.map((r) => (
-              <div key={r.title} className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden hover:shadow-md transition-all group cursor-pointer">
-                <div className="relative overflow-hidden">
-                  <img src={r.img} alt={r.title} className="w-full h-[140px] object-cover group-hover:scale-105 transition-transform duration-300"/>
-                  <div className="absolute top-2.5 left-2.5 w-8 h-8 rounded-lg flex items-center justify-center" style={{backgroundColor: r.iconBg}}>
-                    {r.icon}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {RESOURCE_TYPES.map((r) => {
+              const count = resourceCounts[r.type] || 0;
+              
+              return (
+                <Link 
+                  key={r.title} 
+                  to={`/resources/${r.type}`}
+                  className="bg-white rounded-2xl border border-[#DFE1E4] overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer block"
+                >
+                  <div className="relative overflow-hidden h-[160px]">
+                    <img src={r.img} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                    <div 
+                      className="absolute top-3 left-3 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" 
+                      style={{backgroundColor: r.iconBg}}
+                    >
+                      {r.icon}
+                    </div>
+                    <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg">
+                      {count} {count === 1 ? 'Resource' : 'Resources'}
+                    </div>
                   </div>
-                  <div className="absolute bottom-2 left-2.5 bg-black/60 text-white text-[10px] font-semibold px-2 py-1 rounded-md">
-                    {r.count}
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-[16px] font-bold text-[#1D1F23]">{r.title}</h3>
+                      <ChevronRight className="text-[#9CA3AF] group-hover:text-[#461EA4] group-hover:translate-x-1 transition-all w-4 h-4" />
+                    </div>
+                    <p className="text-[13px] text-[#595C61] leading-snug mb-4 line-clamp-2">{r.desc}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {r.tags.map((tag) => (
+                        <span key={tag} className="text-[10px] font-bold text-[#595C61] bg-[#F6F7F9] border border-[#DFE1E4] rounded-md px-2 py-1">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <h3 className="text-[14px] font-semibold text-[#1D1F23]">{r.title}</h3>
-                    <svg className="text-[#9CA3AF] group-hover:text-[#461EA4] transition-colors" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
-                  </div>
-                  <p className="text-[12px] text-[#6B7280] leading-snug mb-3">{r.desc}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {r.tags.map((tag) => (
-                      <span key={tag} className="text-[10px] font-semibold text-[#6B7280] border border-[#E5E7EB] rounded-full px-2 py-0.5">{tag}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Quick Tools + Featured Resource */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-          {/* Quick Tools */}
-          <div className="bg-white rounded-xl border border-[#E5E7EB] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#595C61" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <h3 className="text-[16px] font-bold text-[#1D1F23]">Quick Tools</h3>
-            </div>
-            <div className="space-y-1">
-              {QUICK_TOOLS.map((tool) => (
-                <button key={tool.title} type="button" className="w-full flex items-center gap-3 px-4 py-3.5 rounded-lg hover:bg-[#F6F7F9] transition-colors group text-left">
-                  <div className="text-[#6B7280] group-hover:text-[#461EA4] transition-colors shrink-0">
-                    {tool.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-[#1D1F23] group-hover:text-[#461EA4] transition-colors">{tool.title}</p>
-                    <p className="text-[12px] text-[#9CA3AF]">{tool.desc}</p>
-                  </div>
-                  <svg className="text-[#9CA3AF] group-hover:text-[#461EA4] transition-colors shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Featured Resource */}
-          <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-            <div className="flex h-full">
-              <div className="flex-1 p-6 flex flex-col justify-between">
-                <div>
-                  <div className="inline-block bg-[#F97316]/10 text-[#F97316] text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-3">
-                    New Resource
-                  </div>
-                  <h3 className="text-[18px] font-bold text-[#1D1F23] mb-3 leading-tight">
-                    The 2024 AI Strategy Workbook
-                  </h3>
-                  <p className="text-[13px] text-[#6B7280] leading-relaxed mb-5">
-                    Our latest comprehensive guide on implementing artificial intelligence in modern business workflows. Includes 15+ case studies and interactive checklists.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button type="button" className="h-[36px] px-4 bg-[#F97316] hover:bg-[#EA580C] text-white text-[12px] font-semibold rounded-lg transition-all">
-                    Download Now
-                  </button>
-                  <button type="button" className="h-[36px] px-4 border border-[#E5E7EB] text-[#595C61] hover:border-[#461EA4] hover:text-[#461EA4] text-[12px] font-semibold rounded-lg transition-all">
-                    Details
-                  </button>
-                </div>
-              </div>
-              <div className="w-[180px] shrink-0">
-                <img
-                  src="https://images.unsplash.com/photo-1737644467636-6b0053476bb2?w=240&h=240&fit=crop&auto=format"
-                  alt="AI Strategy Workbook"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
 
-        {/* Can't find resource CTA */}
-        <div className="bg-[#1C1C2E] rounded-2xl p-8 mb-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        {/* Need Help Section - END OF PAGE */}
+        <div className="bg-gradient-to-br from-[#461EA4]/5 to-[#5533CC]/5 rounded-3xl border border-[#461EA4]/20 p-8 md:p-12">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="text-[26px] font-bold text-white mb-3 leading-tight">
-                Can't find a specific resource?
-              </h2>
-              <p className="text-[14px] text-white/60 leading-relaxed mb-6">
-                Our support team and library assistants are available 24/7 to help you track down specific lecture recordings, textbook editions, or study guides.
+              <div className="flex items-center gap-2 mb-4">
+                <HelpCircle className="w-6 h-6 text-[#461EA4]" />
+                <h3 className="text-[24px] font-bold text-[#1D1F23]">Need Help Finding Resources?</h3>
+              </div>
+              <p className="text-[#595C61] mb-6 leading-relaxed">
+                Can't find what you're looking for? Our support team is here to help you access the right materials for your courses.
               </p>
-              <div className="flex items-center gap-3">
-                <button type="button" className="h-[40px] px-5 bg-[#F97316] hover:bg-[#EA580C] text-white text-[13px] font-semibold rounded-full transition-all">
-                  Request Material
-                </button>
-                <button type="button" className="h-[40px] px-5 border border-white/20 text-white hover:border-white/50 text-[13px] font-semibold rounded-full transition-all">
-                  Contact Support
-                </button>
+              
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 bg-white rounded-xl border border-[#DFE1E4]">
+                  <div className="w-10 h-10 rounded-lg bg-[#461EA4]/10 flex items-center justify-center shrink-0">
+                    <MessageSquare className="w-5 h-5 text-[#461EA4]" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-[#1D1F23] mb-1">Live Chat Support</h4>
+                    <p className="text-sm text-[#595C61]">Chat with our team Mon-Fri, 9am-6pm</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3 p-4 bg-white rounded-xl border border-[#DFE1E4]">
+                  <div className="w-10 h-10 rounded-lg bg-[#461EA4]/10 flex items-center justify-center shrink-0">
+                    <Mail className="w-5 h-5 text-[#461EA4]" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-[#1D1F23] mb-1">Email Us</h4>
+                    <p className="text-sm text-[#595C61]">support@learnova.com</p>
+                    <p className="text-xs text-[#9CA3AF] mt-1">We respond within 24 hours</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3 p-4 bg-white rounded-xl border border-[#DFE1E4]">
+                  <div className="w-10 h-10 rounded-lg bg-[#461EA4]/10 flex items-center justify-center shrink-0">
+                    <Phone className="w-5 h-5 text-[#461EA4]" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-[#1D1F23] mb-1">Call Us</h4>
+                    <p className="text-sm text-[#595C61]">+1 (555) 123-4567</p>
+                    <p className="text-xs text-[#9CA3AF] mt-1">Available during business hours</p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="bg-[#25253A] rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-2 h-2 rounded-full bg-[#22C55E]"/>
-                <span className="text-[13px] font-semibold text-white">Support Experts Online</span>
-              </div>
-              {[
-                "Response time: < 15 mins",
-                "Database access: Full Coverage",
-                "Support priority: Tier 1 Student",
-              ].map((item) => (
-                <div key={item} className="flex items-center gap-3 bg-[#1C1C2E] rounded-lg px-4 py-3 mb-2 last:mb-0">
-                  <svg className="text-[#9CA3AF] shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
-                  <span className="text-[12px] text-white/70">{item}</span>
-                </div>
-              ))}
+            
+            {/* Illustration */}
+            <div className="hidden md:flex items-center justify-center">
+              <svg viewBox="0 0 400 350" className="w-full max-w-md">
+                {/* Background circles */}
+                <circle cx="300" cy="80" r="80" fill="rgba(70,30,164,0.05)" />
+                <circle cx="100" cy="250" r="60" fill="rgba(70,30,164,0.05)" />
+                
+                {/* Chat bubble */}
+                <rect x="80" y="100" width="140" height="100" rx="12" fill="white" stroke="#461EA4" strokeWidth="2" />
+                <polygon points="80,140 70,130 90,140" fill="white" stroke="#461EA4" strokeWidth="2" />
+                <rect x="95" y="115" width="80" height="8" rx="4" fill="#461EA4" />
+                <rect x="95" y="130" width="100" height="6" rx="3" fill="#461EA4" opacity="0.3" />
+                <rect x="95" y="142" width="90" height="6" rx="3" fill="#461EA4" opacity="0.3" />
+                <rect x="95" y="154" width="70" height="6" rx="3" fill="#461EA4" opacity="0.3" />
+                
+                {/* Support person */}
+                <circle cx="280" cy="180" r="50" fill="white" stroke="#461EA4" strokeWidth="2" />
+                <circle cx="280" cy="160" r="20" fill="#461EA4" opacity="0.2" />
+                <circle cx="280" cy="160" r="15" fill="#461EA4" />
+                <path d="M 260 200 Q 280 220 300 200" stroke="#461EA4" strokeWidth="3" fill="none" />
+                
+                {/* Headset */}
+                <path d="M 265 155 Q 280 145 295 155" stroke="#EA580C" strokeWidth="3" fill="none" />
+                <rect x="260" y="155" width="8" height="15" rx="3" fill="#EA580C" />
+                <rect x="292" y="155" width="8" height="15" rx="3" fill="#EA580C" />
+                
+                {/* Message icon */}
+                <circle cx="320" cy="120" r="35" fill="#EA580C" />
+                <path d="M 305 115 Q 320 125 335 115" stroke="white" strokeWidth="2.5" fill="none" />
+                <path d="M 305 125 Q 320 135 335 125" stroke="white" strokeWidth="2.5" fill="none" />
+                
+                {/* Connection lines */}
+                <path d="M 220 150 Q 240 140 260 155" stroke="#461EA4" strokeWidth="2" fill="none" strokeDasharray="5,5" opacity="0.4" />
+              </svg>
             </div>
           </div>
         </div>
