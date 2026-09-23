@@ -27,7 +27,7 @@ const FALLBACK_RESPONSES = {
 };
 
 // ✅ FIX: Use 'protect' instead of 'authMiddleware'
-router.post('/', protect, async (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const { message } = req.body;
         if (!message) return res.status(400).json({ error: 'Message is required' });
