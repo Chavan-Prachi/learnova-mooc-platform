@@ -2,11 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const Course = require('../models/Course');
-const Discussion = require('../models/Discussion');
 
 let aiClient = null;
 
-// Use Groq (free) or OpenAI
+// Initialize Groq (Free)
 if (process.env.GROQ_API_KEY) {
     try {
         const OpenAI = require('openai');
@@ -16,57 +15,33 @@ if (process.env.GROQ_API_KEY) {
         });
         console.log("✅ Groq AI Connected (Free!)");
     } catch (error) {
-        console.error("❌ AI Error:", error.message);
+        console.error("❌ AI Initialization Error:", error.message);
     }
+} else {
+    console.warn("⚠️ GROQ_API_KEY missing!");
 }
 
-router.post('/', protect, async (req, res) => {
+router.post('/', async (req, res) => {
+    console.log(" Chat request received:", req.body.message); // Force log
+    
     try {
         const { message } = req.body;
         if (!message) return res.status(400).json({ error: 'Message is required' });
 
-        // Fetch real data from your database
-        const courses = await Course.find().select('title category description price').limit(10);
-        const courseCount = await Course.countDocuments();
-        const discussionCount = await Discussion.countDocuments();
-
-        // Build a smart system prompt with REAL data
-        const systemPrompt = `You are Learnova AI Assistant, a helpful chatbot for an online learning platform.
-
-PLATFORM INFO:
-- Total courses available: ${courseCount}
-- Active discussions: ${discussionCount}
-
-AVAILABLE COURSES:
-${courses.map(c => `- ${c.title} (${c.category}) - $${c.price}`).join('\n')}
-
-FEATURES:
-- Students can enroll in courses for free or paid
-- Resources include: PPTs, Videos, Ebooks, Notes
-- Discussion forums for each course
-- Certificates upon completion
-- Progress tracking
-
-HOW TO USE:
-- Catalog page: Browse all courses
-- My Learning: View enrolled courses
-- Resources: Download PPTs, videos, PDFs
-- Discussion Forum: Ask questions per course
-
-Be friendly, concise, and use emojis. If asked about specific courses, mention the ones listed above.`;
-
         if (!aiClient) {
-            // Fallback without AI
-            return res.json({ 
-                success: true, 
-                response: `Hi! We have ${courseCount} courses available. How can I help you?` 
-            });
+            return res.json({ success: true, response: "AI is not connected. Please check GROQ_API_KEY." });
         }
 
+        // Fetch some real data to make the AI smart
+        const courseCount = await Course.countDocuments();
+
         const completion = await aiClient.chat.completions.create({
-            model: 'llama-3.3-70b-versatile',
+            model: 'llama-3.3-70b-versatile', // ✅ Use this stable model
             messages: [
-                { role: 'system', content: systemPrompt },
+                { 
+                    role: 'system', 
+                    content: `You are Learnova AI. We have ${courseCount} courses. Be helpful and friendly.` 
+                },
                 { role: 'user', content: message }
             ],
             temperature: 0.7,
@@ -79,11 +54,13 @@ Be friendly, concise, and use emojis. If asked about specific courses, mention t
         });
 
     } catch (error) {
-        console.error('Chat Error:', error);
+        console.error('❌ CHAT ERROR CAUGHT:', error.message);
         
-        // Smart fallback
-        const fallback = "I'm having trouble right now, but I can tell you we have lots of courses! Try checking the Catalog page. 📚";
-        res.json({ success: true, response: fallback });
+        // 🔍 DEBUG MODE: Send the actual error to the frontend so we can see it!
+        return res.json({ 
+            success: true, 
+            response: `DEBUG ERROR: ${error.message}` 
+        });
     }
 });
 
