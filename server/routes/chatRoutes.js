@@ -1,58 +1,72 @@
 const express = require('express');
 const router = express.Router();
-// ✅ FIX: Destructure 'protect' from the middleware object
-const { protect } = require('../middleware/authMiddleware'); 
+const { protect } = require('../middleware/authMiddleware');
+const Course = require('../models/Course');
+const Discussion = require('../models/Discussion');
 
-// 1. Safely initialize OpenAI
-let openai = null;
-if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-api-key-here') {
+let aiClient = null;
+
+// Use Groq (free) or OpenAI
+if (process.env.GROQ_API_KEY) {
     try {
         const OpenAI = require('openai');
-        openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        console.log("✅ OpenAI API Connected Successfully");
+        aiClient = new OpenAI({ 
+            apiKey: process.env.GROQ_API_KEY,
+            baseURL: "https://api.groq.com/openai/v1"
+        });
+        console.log("✅ Groq AI Connected (Free!)");
     } catch (error) {
-        console.error("❌ OpenAI Initialization Error:", error.message);
+        console.error("❌ AI Error:", error.message);
     }
-} else {
-    console.warn("⚠️ OPENAI_API_KEY is missing or invalid in .env. Using fallback responses.");
 }
 
-// 2. Fallback responses if API fails
-const FALLBACK_RESPONSES = {
-    "hey": "Hey there! 👋 How can I help you with your courses today?",
-    "hi": "Hi!  Welcome to Learnova. What can I do for you?",
-    "hello": "Hello! 🎓 Ready to learn something new?",
-    "help": "I can help you with: \n1. Downloading resources\n2. Finding certificates\n3. Course enrollment\nWhat do you need?",
-    "default": "I'm having a little trouble connecting to my brain right now 🧠. Please try again in a moment, or email support@learnova.com!"
-};
-
-// ✅ FIX: Use 'protect' instead of 'authMiddleware'
-router.post('/', async (req, res) => {
+router.post('/', protect, async (req, res) => {
     try {
         const { message } = req.body;
         if (!message) return res.status(400).json({ error: 'Message is required' });
 
-        // If OpenAI is not connected, use fallback
-        if (!openai) {
-            const lowerMsg = message.toLowerCase();
-            let reply = FALLBACK_RESPONSES["default"];
-            
-            if (lowerMsg.includes("hey") || lowerMsg.includes("hi") || lowerMsg.includes("hello")) {
-                reply = FALLBACK_RESPONSES["hey"];
-            } else if (lowerMsg.includes("help")) {
-                reply = FALLBACK_RESPONSES["help"];
-            }
+        // Fetch real data from your database
+        const courses = await Course.find().select('title category description price').limit(10);
+        const courseCount = await Course.countDocuments();
+        const discussionCount = await Discussion.countDocuments();
 
-            // Simulate typing delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            return res.json({ success: true, response: reply });
+        // Build a smart system prompt with REAL data
+        const systemPrompt = `You are Learnova AI Assistant, a helpful chatbot for an online learning platform.
+
+PLATFORM INFO:
+- Total courses available: ${courseCount}
+- Active discussions: ${discussionCount}
+
+AVAILABLE COURSES:
+${courses.map(c => `- ${c.title} (${c.category}) - $${c.price}`).join('\n')}
+
+FEATURES:
+- Students can enroll in courses for free or paid
+- Resources include: PPTs, Videos, Ebooks, Notes
+- Discussion forums for each course
+- Certificates upon completion
+- Progress tracking
+
+HOW TO USE:
+- Catalog page: Browse all courses
+- My Learning: View enrolled courses
+- Resources: Download PPTs, videos, PDFs
+- Discussion Forum: Ask questions per course
+
+Be friendly, concise, and use emojis. If asked about specific courses, mention the ones listed above.`;
+
+        if (!aiClient) {
+            // Fallback without AI
+            return res.json({ 
+                success: true, 
+                response: `Hi! We have ${courseCount} courses available. How can I help you?` 
+            });
         }
 
-        // 3. Real OpenAI Call
-        const completion = await openai.chat.completions.create({
-            model: 'gpt-3.5-turbo',
+        const completion = await aiClient.chat.completions.create({
+            model: 'llama-3.3-70b-versatile',
             messages: [
-                { role: 'system', content: 'You are Learnova Assistant, a helpful AI for an online learning platform. Be concise and friendly.' },
+                { role: 'system', content: systemPrompt },
                 { role: 'user', content: message }
             ],
             temperature: 0.7,
@@ -66,10 +80,10 @@ router.post('/', async (req, res) => {
 
     } catch (error) {
         console.error('Chat Error:', error);
-        res.status(500).json({ 
-            success: false,
-            response: "Sorry, I'm having trouble connecting right now. Please try again! " 
-        });
+        
+        // Smart fallback
+        const fallback = "I'm having trouble right now, but I can tell you we have lots of courses! Try checking the Catalog page. 📚";
+        res.json({ success: true, response: fallback });
     }
 });
 
